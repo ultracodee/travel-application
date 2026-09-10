@@ -75,6 +75,25 @@ export function createApplication(
 	return application;
 }
 
+export function updateDraft(id: string, input: TravelApplicationInput, actorId: string): TravelApplication | undefined {
+	const application = findApplication(id);
+	if (!application) return undefined;
+	if (application.status !== 'draft') throw new Error('只有草稿可以编辑');
+	if (application.applicant.id !== actorId) throw new Error('只能编辑自己的草稿');
+	Object.assign(application, { ...input, applicant: { ...application.applicant }, updatedAt: now() });
+	return application;
+}
+
+export function deleteDraft(id: string, actorId: string): boolean {
+	const index = applications.findIndex((application) => application.id === id);
+	if (index === -1) return false;
+	const application = applications[index];
+	if (application.status !== 'draft') throw new Error('只有草稿可以删除');
+	if (application.applicant.id !== actorId) throw new Error('只能删除自己的草稿');
+	applications.splice(index, 1);
+	return true;
+}
+
 export function changeApplicationStatus(
 	id: string,
 	status: Extract<ApplicationStatus, 'pending' | 'approved' | 'rejected'>,

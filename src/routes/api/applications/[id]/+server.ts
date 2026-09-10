@@ -1,7 +1,8 @@
 import { error, json } from '@sveltejs/kit';
-import { changeApplicationStatus, findApplication } from '$lib/server/applicationRepository';
-import type { ApplicationStatus } from '$lib/types/application';
+import { changeApplicationStatus, deleteDraft, findApplication, updateDraft } from '$lib/server/applicationRepository';
+import type { ApplicationStatus, TravelApplicationInput } from '$lib/types/application';
 import { getCurrentUser } from '$lib/server/auth';
+import { validateTravelApplication } from '$lib/utils/applicationValidation';
 
 export function GET({ params, cookies }) {
 	const user = getCurrentUser(cookies);
@@ -42,6 +43,39 @@ export async function PATCH({ params, request, cookies }) {
 		if (cause instanceof Error && cause.message.includes('不能审批自己')) return json({ message: cause.message }, { status: 403 });
 		if (cause instanceof Error && cause.message.includes('指定审批人')) return json({ message: cause.message }, { status: 403 });
 		if (cause instanceof Error) return json({ message: cause.message }, { status: 409 });
+		throw cause;
+	}
+}
+
+export async function PUT({ params, request, cookies }) {
+	try {
+		const user = getCurrentUser(cookies);
+		if (!user) return json({ message: '请先登录' }, { status: 401 });
+		const input = (await request.json()) as TravelApplicationInput;
+		const errors = validateTravelApplication(input);
+		if (Object.keys(errors).length > 0) return json({ message: '表单校验失败', errors }, { status: 400 });
+		const application = updateDraft(params.id, input, user.id);
+		if (!application) throw error(404, '申请不存在');
+		return json({ data: application });
+	} catch (cause) {
+		if (cause instanceof SyntaxError) return json({ message: '请求体格式无效' }, { status: 400 });
+		if (cause instanceof Error && (cause.message.includes('草稿') || cause.message.includes('只能编辑'))) {
+			return json({ message: cause.message }, { status: 403 });
+		}
+		throw cause;
+	}
+}
+
+export function DELETE({ params, cookies }) {
+	try {
+		const user = getCurrentUser(cookies);
+		if (!user) return json({ message: '请先登录' }, { status: 401 });
+		if (!deleteDraft(params.id, user.id)) throw error(404, '申请不存在');
+		return new Response(null, { status: 204 });
+	} catch (cause) {
+		if (cause instanceof Error && (cause.message.includes('草稿') || cause.message.includes('只能删除'))) {
+			return json({ message: cause.message }, { status: 403 });
+		}
 		throw cause;
 	}
 }

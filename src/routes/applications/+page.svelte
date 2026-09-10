@@ -7,6 +7,7 @@
 	let keyword = $state('');
 	let status = $state<'all' | ApplicationStatus>('all');
 	let isApprover = $state(false);
+	let deletingId = $state('');
 
 	onMount(async () => {
 		try {
@@ -25,6 +26,17 @@
 			return (status === 'all' || item.status === status) && text.includes(keyword.trim().toLowerCase());
 		})
 	);
+
+	async function deleteDraft(id: string) {
+		if (!confirm('确定删除这条草稿申请吗？')) return;
+		deletingId = id;
+		try {
+			const response = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+			if (response.ok) applications = applications.filter((item) => item.id !== id);
+		} finally {
+			deletingId = '';
+		}
+	}
 </script>
 
 <svelte:head><title>{isApprover ? '审批管理' : '我的申请'} - 差旅管理</title></svelte:head>
@@ -60,7 +72,14 @@
 							<td>{TRANSPORT_LABEL[item.transport]}</td>
 							<td>¥ {item.estimatedCost.toFixed(2)}</td>
 							<td><span class={`status status-${item.status}`}>{APPLICATION_STATUS_LABEL[item.status]}</span></td>
-							<td><a class="detail-link" href={`/applications/${item.id}`}>查看详情</a></td>
+							<td class="row-actions">
+								{#if !isApprover && item.status === 'draft'}
+									<a class="detail-link" href={`/apply?id=${item.id}`}>编辑</a>
+									<button class="delete-button" disabled={deletingId === item.id} onclick={() => deleteDraft(item.id)}>删除</button>
+								{:else}
+									<a class="detail-link" href={`/applications/${item.id}`}>查看详情</a>
+								{/if}
+							</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -84,6 +103,7 @@
 	td { padding: 16px 10px; border-bottom: 1px solid #edf0f5; color: #46536b; font-size: 13px; white-space: nowrap; }
 	td strong, td small { display: block; } td small { margin-top: 4px; color: #9aa4b5; font-size: 11px; }
 	.id-link, .detail-link { color: #3975f6; font-weight: 650; } .detail-link { font-size: 12px; }
+	.row-actions { display: flex; align-items: center; gap: 12px; } .delete-button { padding: 0; border: 0; background: transparent; color: #d45c68; font-size: 12px; font-weight: 650; cursor: pointer; } .delete-button:disabled { opacity: .55; cursor: wait; }
 	.muted { color: #9aa4b5; font-size: 11px; }
 	.status { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 650; }
 	.status-draft { color: #667085; background: #f0f2f5; } .status-pending { color: #946b16; background: #fff5d8; }

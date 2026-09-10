@@ -7,6 +7,7 @@
 	import { validateTravelApplication, type ValidationErrors } from '$lib/utils/applicationValidation';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 
 	const transportOptions: TransportType[] = ['train', 'flight', 'car', 'other'];
 	const now = new Date();
@@ -35,11 +36,33 @@
 	let previewReady = $state(false);
 	let submitting = $state(false);
 	let submittedId = $state('');
+	let draftId = $state('');
 	onMount(async () => {
 		const response = await fetch('/api/auth');
 		if (response.ok) {
 			const result = await response.json();
 			if (result.data) form = { ...form, applicant: result.data };
+		}
+		const id = page.url.searchParams.get('id');
+		if (id) {
+			const draftResponse = await fetch(`/api/applications/${id}`);
+			if (draftResponse.ok) {
+				const result = await draftResponse.json();
+				if (result.data.status === 'draft') {
+					draftId = result.data.id;
+					form = {
+						applicant: result.data.applicant,
+						from: result.data.from,
+						to: result.data.to,
+						startDate: result.data.startDate,
+						endDate: result.data.endDate,
+						reason: result.data.reason,
+						transport: result.data.transport,
+						estimatedCost: result.data.estimatedCost,
+						remark: result.data.remark ?? ''
+					};
+				}
+			}
 		}
 	});
 
@@ -98,6 +121,22 @@
 		}
 		submitting = true;
 		try {
+			if (draftId) {
+				const update = await fetch(`/api/applications/${draftId}`, {
+					method: 'PUT',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify(form)
+				});
+				if (!update.ok) throw new Error('草稿更新失败');
+				const response = await fetch(`/api/applications/${draftId}`, {
+					method: 'PATCH',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ status: 'pending' })
+				});
+				if (!response.ok) throw new Error('提交审批失败');
+				await goto(`/applications/${draftId}`);
+				return;
+			}
 			const response = await fetch('/api/applications', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
@@ -132,6 +171,22 @@
 		}
 		submitting = true;
 		try {
+			if (draftId) {
+				const response = await fetch(`/api/applications/${draftId}`, {
+					method: 'PUT',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify(form)
+				});
+				if (!response.ok) {
+					const result = await response.json();
+					errors = result.errors ?? {};
+					notice = result.message ?? '草稿保存失败。';
+					noticeTone = 'info';
+					return;
+				}
+				await goto('/applications');
+				return;
+			}
 			const response = await fetch('/api/applications', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
@@ -232,6 +287,7 @@
 				<input
 					id="start-date"
 					type="date"
+					min={today}
 					value={form.startDate}
 					onchange={(event) => updateField('startDate', event.currentTarget.value)}
 				/>
@@ -242,6 +298,7 @@
 				<input
 					id="end-date"
 					type="date"
+					min={form.startDate || today}
 					value={form.endDate}
 					onchange={(event) => updateField('endDate', event.currentTarget.value)}
 				/>
