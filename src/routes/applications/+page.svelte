@@ -70,7 +70,7 @@
 	.list-panel { padding: 20px 24px; }
 	.toolbar { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
 	.search-wrap { position: relative; flex: 1; max-width: 360px; }
-	.search-wrap span { position: absolute; left: 12px; top: 9px; color: #8995a8; font-size: 20px; }
+	.search-wrap span { position: absolute; left: 12px; top: 0; color: #8995a8; font-size: 27px; }
 	input, select { height: 40px; border: 1px solid #dfe5ee; border-radius: 8px; background: white; color: #33405a; outline: none; }
 	.search-wrap input { width: 100%; padding: 0 12px 0 36px; }
 	select { min-width: 130px; padding: 0 10px; }
