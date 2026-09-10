@@ -1,42 +1,43 @@
-# sv
+# TravelFlow 差旅申请管理
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+基于 SvelteKit、TypeScript、Tailwind CSS 和 Vitest 构建的企业差旅申请与审批管理系统。
 
-## Creating a project
+## 功能
 
-If you're seeing this, you've probably already done this step. Congrats!
+- 工作台：申请状态指标和最近申请
+- 发起申请：表单校验、预览和提交
+- 申请管理：搜索、状态筛选和详情
+- 审批处理：提交审批、通过、驳回及审批意见
+- 数据统计：状态分布、部门申请量、费用和通过率
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## 开发
 
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.17.0 create --template minimal --types ts --add tailwindcss="plugins:none" vitest="usages:component" --install npm .
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+安装依赖后运行：
 
 ```sh
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+## 检查与测试
 
-To create a production version of your app:
+```sh
+npm run check
+npm test
+```
+
+## 构建
 
 ```sh
 npm run build
+npm run preview
 ```
 
-You can preview the production build with `npm run preview`.
+## API
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- `GET /api/applications`：获取申请列表
+- `POST /api/applications`：创建差旅申请
+- `GET /api/applications/:id`：获取申请详情
+- `PATCH /api/applications/:id`：更新申请状态
+
+当前示例数据存储在进程内存中，服务重启后会恢复初始数据。
