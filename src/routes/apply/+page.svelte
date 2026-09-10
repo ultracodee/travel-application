@@ -5,6 +5,7 @@
 		type TravelApplicationInput
 	} from '$lib/types/application';
 	import { validateTravelApplication, type ValidationErrors } from '$lib/utils/applicationValidation';
+	import { goto } from '$app/navigation';
 
 	const transportOptions: TransportType[] = ['train', 'flight', 'car', 'other'];
 
@@ -29,6 +30,8 @@
 	let notice = $state('');
 	let noticeTone = $state<'success' | 'info'>('info');
 	let previewReady = $state(false);
+	let submitting = $state(false);
+	let submittedId = $state('');
 
 	type EditableField =
 		| 'from'
@@ -77,6 +80,46 @@
 		notice = '信息校验通过，下一步将进入申请预览。';
 		previewReady = true;
 	}
+
+	function backToEdit() {
+		previewReady = false;
+		notice = '';
+	}
+
+	async function submitApplication() {
+		if (!validate()) {
+			previewReady = false;
+			noticeTone = 'info';
+			notice = '表单信息已发生变化，请重新检查必填项。';
+			return;
+		}
+		submitting = true;
+		try {
+			const response = await fetch('/api/applications', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify(form)
+			});
+			const result = await response.json();
+			if (!response.ok) {
+				errors = result.errors ?? {};
+				noticeTone = 'info';
+				notice = result.message ?? '提交失败，请检查表单。';
+				previewReady = false;
+				return;
+			}
+			submittedId = result.data.id;
+			noticeTone = 'success';
+			notice = '差旅申请已提交，正在进入申请详情。';
+			previewReady = false;
+			await goto(`/applications/${submittedId}`);
+		} catch {
+			noticeTone = 'info';
+			notice = '网络异常，暂时无法提交，请稍后重试。';
+		} finally {
+			submitting = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -97,6 +140,7 @@
 	</div>
 </div>
 
+{#if !previewReady}
 <form class="application-form" onsubmit={(event) => { event.preventDefault(); preparePreview(); }}>
 	<section class="panel form-panel">
 		<div class="section-heading">
@@ -246,6 +290,32 @@
 		<button type="submit" class="primary-button">下一步：预览 <span aria-hidden="true">→</span></button>
 	</div>
 </form>
+{:else}
+<section class="panel preview-panel">
+	<div class="preview-heading">
+		<div>
+			<h2>申请预览</h2>
+			<p>请确认以下信息无误后提交审批。</p>
+		</div>
+		<span class="preview-badge">待提交</span>
+	</div>
+	<div class="preview-grid">
+		<div><span>申请人</span><strong>{form.applicant.name} · {form.applicant.department}</strong></div>
+		<div><span>出行路线</span><strong>{form.from} → {form.to}</strong></div>
+		<div><span>出行日期</span><strong>{form.startDate} 至 {form.endDate}</strong></div>
+		<div><span>交通方式</span><strong>{TRANSPORT_LABEL[form.transport]}</strong></div>
+		<div><span>预计费用</span><strong>¥ {form.estimatedCost.toFixed(2)}</strong></div>
+		<div class="preview-full"><span>出行事由</span><strong>{form.reason}</strong></div>
+		{#if form.remark}<div class="preview-full"><span>备注</span><strong>{form.remark}</strong></div>{/if}
+	</div>
+	<div class="preview-actions">
+		<button type="button" class="secondary-button" onclick={backToEdit}>返回修改</button>
+		<button type="button" class="primary-button" disabled={submitting} onclick={submitApplication}>
+			{submitting ? '提交中…' : '确认提交'} <span aria-hidden="true">→</span>
+		</button>
+	</div>
+</section>
+{/if}
 
 <style>
 	.step-indicator {
@@ -436,6 +506,18 @@
 		gap: 12px;
 		padding-bottom: 12px;
 	}
+	.preview-panel { padding: 28px; }
+	.preview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+	.preview-heading h2 { margin: 0; font-size: 19px; }
+	.preview-heading p { margin: 6px 0 0; color: #8a95a8; font-size: 13px; }
+	.preview-badge { padding: 5px 10px; border-radius: 999px; color: #8b671b; background: #fff5d8; font-size: 12px; font-weight: 650; }
+	.preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid #edf0f5; }
+	.preview-grid > div { display: grid; gap: 7px; padding: 17px 4px; border-bottom: 1px solid #edf0f5; }
+	.preview-grid span { color: #8a95a8; font-size: 12px; }
+	.preview-grid strong { color: #29354c; font-size: 14px; font-weight: 600; line-height: 1.6; }
+	.preview-full { grid-column: 1 / -1; }
+	.preview-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+	button:disabled { cursor: wait; opacity: .65; }
 	.secondary-button {
 		min-height: 42px;
 		padding: 0 18px;
@@ -473,5 +555,10 @@
 		.form-actions button {
 			width: 100%;
 		}
+		.preview-panel { padding: 21px 18px; }
+		.preview-grid { grid-template-columns: 1fr; }
+		.preview-full { grid-column: auto; }
+		.preview-actions { flex-direction: column-reverse; }
+		.preview-actions button { width: 100%; }
 	}
 </style>
