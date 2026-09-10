@@ -6,6 +6,7 @@
 	} from '$lib/types/application';
 	import { validateTravelApplication, type ValidationErrors } from '$lib/utils/applicationValidation';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 
 	const transportOptions: TransportType[] = ['train', 'flight', 'car', 'other'];
 
@@ -32,6 +33,13 @@
 	let previewReady = $state(false);
 	let submitting = $state(false);
 	let submittedId = $state('');
+	onMount(async () => {
+		const response = await fetch('/api/auth');
+		if (response.ok) {
+			const result = await response.json();
+			if (result.data) form = { ...form, applicant: result.data };
+		}
+	});
 
 	type EditableField =
 		| 'from'

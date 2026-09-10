@@ -29,12 +29,12 @@
 		switching = false;
 	}
 
-	const navigation = [
+	let navigation = $derived([
 		{ href: '/', label: '工作台', icon: '⌂' },
 		{ href: '/apply', label: '发起申请', icon: '+' },
-		{ href: '/applications', label: '申请管理', icon: '▤' },
-		{ href: '/statistics', label: '数据统计', icon: '◫' }
-	];
+		{ href: '/applications', label: currentUser?.roles.includes('approver') ? '审批管理' : '我的申请', icon: '▤' },
+		...(currentUser?.roles.includes('approver') ? [{ href: '/statistics', label: '数据统计', icon: '◫' }] : [])
+	]);
 
 	function isActive(href: string) {
 		return href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
@@ -81,7 +81,7 @@
 		<header class="topbar">
 			<button class="menu-button" aria-label="打开导航" onclick={() => (mobileMenuOpen = true)}>☰</button>
 			<div class="topbar-title"><span>企业服务中心</span><strong>差旅申请管理</strong></div>
-			<div class="topbar-actions"><button class="icon-button" aria-label="通知">♢</button><div class="header-avatar">张</div></div>
+			<div class="topbar-actions"><div class="header-avatar">{currentUser?.name?.slice(0, 1) ?? '?'}</div></div>
 		</header>
 		<main class="page-container">{@render children()}</main>
 	</div>

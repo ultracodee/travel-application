@@ -4,9 +4,13 @@ import type { ApplicationStatus } from '$lib/types/application';
 import { getCurrentUser } from '$lib/server/auth';
 
 export function GET({ params, cookies }) {
-	if (!getCurrentUser(cookies)) return json({ message: '请先登录' }, { status: 401 });
+	const user = getCurrentUser(cookies);
+	if (!user) return json({ message: '请先登录' }, { status: 401 });
 	const application = findApplication(params.id);
 	if (!application) throw error(404, '申请不存在');
+	if (!user.roles.includes('approver') && application.applicant.id !== user.id) {
+		return json({ message: '无权查看该申请' }, { status: 403 });
+	}
 	return json({ data: application });
 }
 

@@ -9,8 +9,11 @@
 	let actionMessage = $state('');
 	let comment = $state('');
 	let acting = $state(false);
+	let isApprover = $state(false);
 
 	onMount(async () => {
+		const auth = await fetch('/api/auth');
+		if (auth.ok) isApprover = (await auth.json()).data?.roles?.includes('approver') ?? false;
 		const response = await fetch(`/api/applications/${page.params.id}`);
 		if (response.ok) application = (await response.json()).data;
 		else errorMessage = '申请不存在或已被删除。';
@@ -66,7 +69,7 @@
 			<div class="timeline">{#each application.approvalRecords as record}<div class="record"><span class="dot"></span><div><strong>{record.approver.name} · {record.action === 'approved' ? '通过' : '驳回'}</strong><small>{record.operatedAt} {#if record.comment} · {record.comment}{/if}</small></div></div>{/each}</div>
 		{/if}
 	</section>
-	{#if application.status === 'pending' || application.status === 'draft' || application.status === 'rejected'}
+	{#if isApprover && (application.status === 'pending' || application.status === 'draft' || application.status === 'rejected')}
 		<section class="panel action-panel">
 			<h2>处理申请</h2><textarea rows="3" placeholder="填写审批意见（可选）" bind:value={comment}></textarea>
 			<div class="actions">

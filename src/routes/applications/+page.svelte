@@ -6,9 +6,12 @@
 	let loading = $state(true);
 	let keyword = $state('');
 	let status = $state<'all' | ApplicationStatus>('all');
+	let isApprover = $state(false);
 
 	onMount(async () => {
 		try {
+			const auth = await fetch('/api/auth');
+			if (auth.ok) isApprover = (await auth.json()).data?.roles?.includes('approver') ?? false;
 			const response = await fetch('/api/applications');
 			if (response.ok) applications = (await response.json()).data;
 		} finally {
@@ -24,10 +27,10 @@
 	);
 </script>
 
-<svelte:head><title>申请管理 - 差旅管理</title></svelte:head>
+<svelte:head><title>{isApprover ? '审批管理' : '我的申请'} - 差旅管理</title></svelte:head>
 
 <div class="page-heading">
-	<div><h1>申请管理</h1><p>查看并处理全部差旅申请。</p></div>
+	<div><h1>{isApprover ? '审批管理' : '我的申请'}</h1><p>{isApprover ? '查看并处理全部员工的差旅申请。' : '查看我提交的差旅申请。'}</p></div>
 	<a class="primary-button" href="/apply">＋ 新建申请</a>
 </div>
 

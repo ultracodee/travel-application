@@ -1,10 +1,10 @@
 import { json } from '@sveltejs/kit';
-import { findUser, getCurrentUser, setCurrentUser } from '$lib/server/auth';
+import { findUser, getCurrentUser, setCurrentUser, users } from '$lib/server/auth';
 
 export function GET({ cookies }) {
 	const current = getCurrentUser(cookies) ?? findUser('U001');
 	if (current && !getCurrentUser(cookies)) setCurrentUser(cookies, current.id);
-	return json({ data: current, users: [findUser('U001'), findUser('U002')] });
+	return json({ data: current, users });
 }
 
 export async function POST({ request, cookies }) {

@@ -6,8 +6,12 @@ import { getCurrentUser } from '$lib/server/auth';
 import { approver } from '$lib/server/applicationRepository';
 
 export function GET({ cookies }) {
-	if (!getCurrentUser(cookies)) return json({ message: '请先登录' }, { status: 401 });
-	return json({ data: listApplications() });
+	const user = getCurrentUser(cookies);
+	if (!user) return json({ message: '请先登录' }, { status: 401 });
+	const data = user.roles.includes('approver')
+		? listApplications()
+		: listApplications().filter((application) => application.applicant.id === user.id);
+	return json({ data });
 }
 
 export async function POST({ request, cookies }) {
