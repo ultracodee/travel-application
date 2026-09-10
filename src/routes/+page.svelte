@@ -4,7 +4,10 @@
 	import { countByStatus } from '$lib/utils/applicationStatistics';
 
 	let applications = $state<TravelApplication[]>([]);
+	let isApprover = $state(false);
 	onMount(async () => {
+		const auth = await fetch('/api/auth');
+		if (auth.ok) isApprover = (await auth.json()).data?.roles?.includes('approver') ?? false;
 		const response = await fetch('/api/applications');
 		if (response.ok) applications = (await response.json()).data;
 	});
@@ -16,7 +19,7 @@
 
 <div class="page-heading">
 	<div><h1>工作台</h1><p>欢迎回来，快速了解差旅申请处理情况。</p></div>
-	<a class="primary-button" href="/apply">＋ 发起差旅申请</a>
+	{#if !isApprover}<a class="primary-button" href="/apply">＋ 发起差旅申请</a>{/if}
 </div>
 
 <section class="metrics">

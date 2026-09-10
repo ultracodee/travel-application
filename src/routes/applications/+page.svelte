@@ -43,7 +43,7 @@
 
 <div class="page-heading">
 	<div><h1>{isApprover ? '审批管理' : '我的申请'}</h1><p>{isApprover ? '查看并处理全部员工的差旅申请。' : '查看我提交的差旅申请。'}</p></div>
-	<a class="primary-button" href="/apply">＋ 新建申请</a>
+	{#if !isApprover}<a class="primary-button" href="/apply">＋ 新建申请</a>{/if}
 </div>
 
 <section class="panel list-panel">
