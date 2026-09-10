@@ -8,12 +8,16 @@ export function GET() {
 }
 
 export async function POST({ request }) {
-	const input = (await request.json()) as TravelApplicationInput;
-	const errors = validateTravelApplication(input);
+	try {
+		const input = (await request.json()) as TravelApplicationInput;
+		const errors = validateTravelApplication(input);
 
-	if (Object.keys(errors).length > 0) {
-		return json({ message: '表单校验失败', errors }, { status: 400 });
+		if (Object.keys(errors).length > 0) {
+			return json({ message: '表单校验失败', errors }, { status: 400 });
+		}
+
+		return json({ data: createApplication(input) }, { status: 201 });
+	} catch {
+		return json({ message: '请求体格式无效' }, { status: 400 });
 	}
-
-	return json({ data: createApplication(input) }, { status: 201 });
 }

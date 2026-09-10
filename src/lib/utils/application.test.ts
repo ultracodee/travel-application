@@ -3,6 +3,7 @@ import type { TravelApplication } from '$lib/types/application';
 import { countByDepartment, countByStatus } from './applicationStatistics';
 import { assertTransition, canTransition } from './applicationStatus';
 import { validateTravelApplication } from './applicationValidation';
+import { changeApplicationStatus, createApplication } from '$lib/server/applicationRepository';
 
 const application: TravelApplication = {
 	id: 'TRV-TEST-001',
@@ -61,5 +62,15 @@ describe('状态流转和统计', () => {
 		];
 		expect(countByStatus(applications)).toEqual({ draft: 0, pending: 1, approved: 1, rejected: 1 });
 		expect(countByDepartment(applications)).toEqual({ 研发部: 2, 销售部: 1 });
+	});
+
+	it('创建申请后可提交审批并记录审批意见', () => {
+		const created = createApplication(input());
+		expect(created.status).toBe('draft');
+		const pending = changeApplicationStatus(created.id, 'pending');
+		expect(pending?.status).toBe('pending');
+		const approved = changeApplicationStatus(created.id, 'approved', '同意出差');
+		expect(approved?.status).toBe('approved');
+		expect(approved?.approvalRecords.at(-1)?.comment).toBe('同意出差');
 	});
 });
