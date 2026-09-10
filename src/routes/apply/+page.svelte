@@ -71,13 +71,6 @@
 		return Object.keys(errors).length === 0;
 	}
 
-	function saveDraft() {
-		errors = {};
-		noticeTone = 'success';
-		notice = '草稿已保存，可稍后继续填写。';
-		previewReady = false;
-	}
-
 	function preparePreview() {
 		if (!validate()) {
 			noticeTone = 'info';
@@ -106,7 +99,7 @@
 			const response = await fetch('/api/applications', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(form)
+				body: JSON.stringify({ ...form, status: 'pending' })
 			});
 			const result = await response.json();
 			if (!response.ok) {
@@ -124,6 +117,35 @@
 		} catch {
 			noticeTone = 'info';
 			notice = '网络异常，暂时无法提交，请稍后重试。';
+		} finally {
+			submitting = false;
+		}
+	}
+
+	async function saveDraft() {
+		if (!validate()) {
+			noticeTone = 'info';
+			notice = '请先完善申请人、行程和日期等必填信息后保存草稿。';
+			return;
+		}
+		submitting = true;
+		try {
+			const response = await fetch('/api/applications', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ ...form, status: 'draft' })
+			});
+			if (!response.ok) {
+				const result = await response.json();
+				errors = result.errors ?? {};
+				notice = result.message ?? '草稿保存失败。';
+				noticeTone = 'info';
+				return;
+			}
+			await goto('/applications');
+		} catch {
+			noticeTone = 'info';
+			notice = '网络异常，暂时无法保存草稿。';
 		} finally {
 			submitting = false;
 		}

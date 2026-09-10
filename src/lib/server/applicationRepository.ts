@@ -54,14 +54,19 @@ export function findApplication(id: string): TravelApplication | undefined {
 	return applications.find((application) => application.id === id);
 }
 
-export function createApplication(input: TravelApplicationInput, applicant: Applicant, approverId = approver.id): TravelApplication {
+export function createApplication(
+	input: TravelApplicationInput,
+	applicant: Applicant,
+	approverId = approver.id,
+	status: Extract<ApplicationStatus, 'draft' | 'pending'> = 'draft'
+): TravelApplication {
 	const timestamp = now();
 	const application: TravelApplication = {
 		...input,
 		applicant: { ...applicant },
 		approverId,
 		id: nextId(),
-		status: 'draft',
+		status,
 		approvalRecords: [],
 		createdAt: timestamp,
 		updatedAt: timestamp
