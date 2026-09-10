@@ -6,7 +6,8 @@ export type { User, UserRole } from '$lib/types/user';
 export const users: User[] = [
 	{ id: 'U001', name: '张三', department: '研发部', position: '前端开发', roles: ['employee'] },
 	{ id: 'U002', name: '李经理', department: '研发部', position: '部门负责人', roles: ['approver'] },
-	{ id: 'U003', name: '王芳', department: '市场部', position: '市场专员', roles: ['employee'] }
+	{ id: 'U003', name: '王芳', department: '市场部', position: '市场专员', roles: ['employee'] },
+	{ id: 'U004', name: '陈敏', department: '客户成功部', position: '客户成功专员', roles: ['employee'] }
 ];
 
 export const SESSION_COOKIE = 'travelflow_user';
