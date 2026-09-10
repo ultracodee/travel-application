@@ -26,6 +26,18 @@ npm run check
 npm test
 ```
 
+测试分为两类：
+
+- `npm run test:unit -- --run`：工具与业务规则的单元测试；
+- `npm run test:component -- --run`：Svelte 组件的浏览器测试；
+- `npm test`：依次执行以上两类测试，适合面试验收。
+
+组件测试使用 Playwright Chromium。首次运行组件测试前，请执行：
+
+```sh
+npx playwright install chromium
+```
+
 ## 构建
 
 ```sh
