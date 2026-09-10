@@ -26,8 +26,8 @@ export default defineConfig({
 				extends: './vite.config.ts',
 				test: {
 					name: 'unit',
-					include: ['src/**/*.test.{js,ts}'],
-					exclude: ['src/**/*.svelte.test.{js,ts}']
+					include: ['test/unit/**/*.test.{js,ts}'],
+					exclude: []
 				}
 			},
 			{
@@ -39,8 +39,8 @@ export default defineConfig({
 						provider: playwright(),
 						instances: [{ browser: 'chromium', headless: true }]
 					},
-					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-					exclude: ['src/lib/server/**', 'src/lib/vitest-examples/**']
+					include: ['test/component/**/*.svelte.{test,spec}.{js,ts}'],
+					exclude: []
 				}
 			}
 		]

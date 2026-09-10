@@ -58,6 +58,10 @@ src/
 │   ├── +layout.svelte # 主布局、菜单与账号切换
 │   └── +page.svelte   # 工作台
 └── app.*              # SvelteKit 应用入口配置
+
+test/
+├── unit/              # 纯逻辑单元测试：校验、状态流转、统计和仓储
+└── component/         # Svelte 组件浏览器测试
 ```
 
 边界约定：
@@ -66,6 +70,7 @@ src/
 - `routes/api` 负责 HTTP 输入输出、身份识别和权限检查；
 - `lib/server` 负责数据操作和服务端业务规则；
 - `lib/utils` 保持可独立测试，不依赖页面或 HTTP；
+- 测试集中放在根目录 `test` 下，按 `unit` 和 `component` 分层；
 - 共享类型、客户端工具和 UI 组件统一放在 `lib`，避免路由页面互相复制代码。
 
 ## 测试与验收

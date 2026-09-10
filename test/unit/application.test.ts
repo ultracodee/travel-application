@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { TravelApplication } from '$lib/types/application';
-import { countByDepartment, countByStatus } from './applicationStatistics';
-import { assertTransition, canTransition } from './applicationStatus';
-import { validateTravelApplication } from './applicationValidation';
+import { countByDepartment, countByStatus } from '$lib/utils/applicationStatistics';
+import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
+import { validateTravelApplication } from '$lib/utils/applicationValidation';
 import { changeApplicationStatus, createApplication } from '$lib/server/applicationRepository';
 
 const application: TravelApplication = {
