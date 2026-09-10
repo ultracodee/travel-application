@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { APPLICATION_STATUS_LABEL, TRANSPORT_LABEL, type ApplicationStatus, type TravelApplication } from '$lib/types/application';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import { getAuthState, hasRole } from '$lib/client/auth';
 
 	let application = $state<TravelApplication | null>(null);
 	let loading = $state(true);
@@ -13,17 +15,12 @@
 	let isApplicant = $state(false);
 
 	onMount(async () => {
-		const auth = await fetch('/api/auth');
-		if (auth.ok) {
-			const user = (await auth.json()).data;
-			isApprover = user?.roles?.includes('approver') ?? false;
-			isApplicant = user?.id === application?.applicant.id;
-		}
+		const auth = await getAuthState();
+		isApprover = hasRole(auth.data, 'approver');
 		const response = await fetch(`/api/applications/${page.params.id}`);
 		if (response.ok) {
 			application = (await response.json()).data;
-			const authResponse = await fetch('/api/auth');
-			if (authResponse.ok) isApplicant = (await authResponse.json()).data?.id === application?.applicant.id;
+			isApplicant = auth.data?.id === application?.applicant.id;
 		}
 		else errorMessage = '申请不存在或已被删除。';
 		loading = false;
@@ -62,7 +59,7 @@
 {:else if application}
 	<section class="panel detail-panel">
 		<div class="detail-header">
-			<div><span class={`status status-${application.status}`}>{APPLICATION_STATUS_LABEL[application.status]}</span><h2>{application.from} → {application.to}</h2><p>{application.startDate} 至 {application.endDate} · {TRANSPORT_LABEL[application.transport]}</p></div>
+			<div><StatusBadge status={application.status} /><h2>{application.from} → {application.to}</h2><p>{application.startDate} 至 {application.endDate} · {TRANSPORT_LABEL[application.transport]}</p></div>
 			<div class="cost">¥ {application.estimatedCost.toFixed(2)}<small>预计费用</small></div>
 		</div>
 		<div class="info-grid">
@@ -103,7 +100,6 @@
 	.detail-header { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 22px; border-bottom: 1px solid #edf0f5; }
 	.detail-header h2 { margin: 12px 0 6px; font-size: 22px; } .detail-header p { margin: 0; color: #8a95a8; font-size: 13px; }
 	.cost { color: #3975f6; font-size: 24px; font-weight: 750; text-align: right; } .cost small { display: block; margin-top: 4px; color: #9aa4b5; font-size: 11px; font-weight: 400; }
-	.status { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 650; } .status-draft { color: #667085; background: #f0f2f5; } .status-pending { color: #946b16; background: #fff5d8; } .status-approved { color: #237a52; background: #e8f8ef; } .status-rejected { color: #b54855; background: #ffedf0; }
 	.info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding-top: 22px; } .info-grid div { display: grid; gap: 7px; } .info-grid span, .section-title span { color: #8a95a8; font-size: 12px; } .info-grid strong { color: #34415a; font-size: 14px; line-height: 1.6; } .wide { grid-column: 1 / -1; }
 	.section-title { display: flex; justify-content: space-between; align-items: center; } .section-title h2, .action-panel h2 { margin: 0; font-size: 17px; } .muted { color: #8a95a8; font-size: 13px; }
 	.timeline { display: grid; gap: 18px; margin-top: 20px; } .record { display: flex; gap: 12px; align-items: flex-start; } .dot { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: #3975f6; } .record strong, .record small { display: block; } .record strong { color: #34415a; font-size: 13px; } .record small { margin-top: 5px; color: #8a95a8; font-size: 12px; }

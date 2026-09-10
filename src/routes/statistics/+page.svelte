@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { APPLICATION_STATUS_LABEL, type TravelApplication } from '$lib/types/application';
 	import { countByDepartment, countByStatus } from '$lib/utils/applicationStatistics';
+	import { getAuthState, hasRole } from '$lib/client/auth';
 
 	let applications = $state<TravelApplication[]>([]);
 	let statusCounts = $derived(countByStatus(applications));
@@ -10,8 +11,8 @@
 	let isApprover = $state(false);
 	let loading = $state(true);
 	onMount(async () => {
-		const auth = await fetch('/api/auth');
-		if (auth.ok) isApprover = (await auth.json()).data?.roles?.includes('approver') ?? false;
+		const auth = await getAuthState();
+		isApprover = hasRole(auth.data, 'approver');
 		const response = await fetch('/api/applications');
 		if (response.ok) applications = (await response.json()).data;
 		loading = false;

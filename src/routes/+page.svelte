@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { APPLICATION_STATUS_LABEL, type TravelApplication } from '$lib/types/application';
+	import { type TravelApplication } from '$lib/types/application';
 	import { countByStatus } from '$lib/utils/applicationStatistics';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import { getAuthState, hasRole } from '$lib/client/auth';
 
 	let applications = $state<TravelApplication[]>([]);
 	let isApprover = $state(false);
 	onMount(async () => {
-		const auth = await fetch('/api/auth');
-		if (auth.ok) isApprover = (await auth.json()).data?.roles?.includes('approver') ?? false;
+		const auth = await getAuthState();
+		isApprover = hasRole(auth.data, 'approver');
 		const response = await fetch('/api/applications');
 		if (response.ok) applications = (await response.json()).data;
 	});
@@ -38,7 +40,7 @@
 	{#if recent.length === 0}<div class="empty">暂无申请记录</div>{:else}
 		<div class="recent-list">
 			{#each recent as item}
-				<a class="recent-item" href={`/applications/${item.id}`}><div class="route"><strong>{item.from} → {item.to}</strong><span>{item.id} · {item.applicant.name}</span></div><div class="recent-meta"><span>¥ {item.estimatedCost.toFixed(2)}</span><em class={`status status-${item.status}`}>{APPLICATION_STATUS_LABEL[item.status]}</em></div></a>
+				<a class="recent-item" href={`/applications/${item.id}`}><div class="route"><strong>{item.from} → {item.to}</strong><span>{item.id} · {item.applicant.name}</span></div><div class="recent-meta"><span>¥ {item.estimatedCost.toFixed(2)}</span><StatusBadge status={item.status} /></div></a>
 			{/each}
 		</div>
 	{/if}
@@ -50,6 +52,6 @@
 	.tone-blue { color: #3975f6; } .tone-amber { color: #d49b28; } .tone-green { color: #2eaa70; } .tone-red { color: #d45c68; }
 	.recent-panel { padding: 22px 24px; } .section-title { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; } .section-title h2 { margin: 0; font-size: 17px; } .section-title p { margin: 6px 0 0; color: #8a95a8; font-size: 12px; } .section-title a { color: #3975f6; font-size: 12px; font-weight: 650; }
 	.recent-list { display: grid; } .recent-item { display: flex; justify-content: space-between; gap: 18px; padding: 16px 4px; border-top: 1px solid #edf0f5; } .route strong, .route span { display: block; } .route strong { color: #34415a; font-size: 14px; } .route span { margin-top: 5px; color: #9aa4b5; font-size: 11px; } .recent-meta { display: flex; align-items: center; gap: 16px; color: #46536b; font-size: 13px; }
-	.status { padding: 5px 9px; border-radius: 999px; font-size: 11px; font-style: normal; font-weight: 650; } .status-draft { color: #667085; background: #f0f2f5; } .status-pending { color: #946b16; background: #fff5d8; } .status-approved { color: #237a52; background: #e8f8ef; } .status-rejected { color: #b54855; background: #ffedf0; } .empty { padding: 40px; color: #8a95a8; text-align: center; }
+	.empty { padding: 40px; color: #8a95a8; text-align: center; }
 	@media (max-width: 800px) { .metrics { grid-template-columns: repeat(2, 1fr); } } @media (max-width: 520px) { .metrics { gap: 10px; } .metric { padding: 15px; } .recent-item { align-items: flex-start; flex-direction: column; gap: 9px; } }
 </style>

@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { changeApplicationStatus, deleteDraft, findApplication, updateDraft } from '$lib/server/applicationRepository';
 import type { ApplicationStatus, TravelApplicationInput } from '$lib/types/application';
-import { getCurrentUser } from '$lib/server/auth';
+import { getCurrentUser, hasRole } from '$lib/server/auth';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
 
 export function GET({ params, cookies }) {
@@ -9,7 +9,7 @@ export function GET({ params, cookies }) {
 	if (!user) return json({ message: '请先登录' }, { status: 401 });
 	const application = findApplication(params.id);
 	if (!application) throw error(404, '申请不存在');
-	if (!user.roles.includes('approver') && application.applicant.id !== user.id) {
+	if (!hasRole(user, 'approver') && application.applicant.id !== user.id) {
 		return json({ message: '无权查看该申请' }, { status: 403 });
 	}
 	return json({ data: application });
@@ -31,7 +31,7 @@ export async function PATCH({ params, request, cookies }) {
 			if (applicationOwner(params.id, user.id) === false) {
 				return json({ message: '只有申请人可以提交自己的草稿' }, { status: 403 });
 			}
-		} else if (!user.roles.includes('approver')) {
+		} else if (!hasRole(user, 'approver')) {
 			return json({ message: '当前用户没有审批权限' }, { status: 403 });
 		}
 

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { APPLICATION_STATUS_LABEL, TRANSPORT_LABEL, type ApplicationStatus, type TravelApplication } from '$lib/types/application';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import { getAuthState, hasRole } from '$lib/client/auth';
 
 	let applications = $state<TravelApplication[]>([]);
 	let loading = $state(true);
@@ -11,8 +13,8 @@
 
 	onMount(async () => {
 		try {
-			const auth = await fetch('/api/auth');
-			if (auth.ok) isApprover = (await auth.json()).data?.roles?.includes('approver') ?? false;
+			const auth = await getAuthState();
+			isApprover = hasRole(auth.data, 'approver');
 			const response = await fetch('/api/applications');
 			if (response.ok) applications = (await response.json()).data;
 		} finally {
@@ -71,7 +73,7 @@
 							<td>{item.startDate}<br /><span class="muted">至 {item.endDate}</span></td>
 							<td>{TRANSPORT_LABEL[item.transport]}</td>
 							<td>¥ {item.estimatedCost.toFixed(2)}</td>
-							<td><span class={`status status-${item.status}`}>{APPLICATION_STATUS_LABEL[item.status]}</span></td>
+			<td><StatusBadge status={item.status} /></td>
 							<td>
 								<div class="row-actions">
 									{#if !isApprover && item.status === 'draft'}
@@ -107,9 +109,6 @@
 	.id-link, .detail-link { color: #3975f6; font-weight: 650; } .detail-link { font-size: 12px; }
 	.row-actions { display: flex; align-items: center; gap: 12px; min-height: 18px; } .delete-button { padding: 0; border: 0; background: transparent; color: #d45c68; font-size: 12px; font-weight: 650; cursor: pointer; } .delete-button:disabled { opacity: .55; cursor: wait; }
 	.muted { color: #9aa4b5; font-size: 11px; }
-	.status { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 650; }
-	.status-draft { color: #667085; background: #f0f2f5; } .status-pending { color: #946b16; background: #fff5d8; }
-	.status-approved { color: #237a52; background: #e8f8ef; } .status-rejected { color: #b54855; background: #ffedf0; }
 	.empty { min-height: 280px; display: grid; place-content: center; justify-items: center; gap: 8px; color: #8a95a8; font-size: 13px; }
 	.empty strong { color: #44516a; font-size: 16px; } .empty-icon { color: #3975f6; font-size: 30px; }
 	@media (max-width: 620px) { .toolbar { flex-direction: column; } .search-wrap { max-width: none; } select { width: 100%; } .list-panel { padding: 16px; } }

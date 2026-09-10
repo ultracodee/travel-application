@@ -1,8 +1,7 @@
 import type { Cookies } from '@sveltejs/kit';
-import type { Applicant } from '$lib/types/application';
+import type { User, UserRole } from '$lib/types/user';
 
-export type UserRole = 'employee' | 'approver';
-export type User = Applicant & { roles: UserRole[] };
+export type { User, UserRole } from '$lib/types/user';
 
 export const users: User[] = [
 	{ id: 'U001', name: '张三', department: '研发部', position: '前端开发', roles: ['employee'] },
@@ -18,6 +17,10 @@ export function findUser(id: string | undefined): User | undefined {
 
 export function getCurrentUser(cookies: Cookies): User | undefined {
 	return findUser(cookies.get(SESSION_COOKIE));
+}
+
+export function hasRole(user: User, role: UserRole): boolean {
+	return user.roles.includes(role);
 }
 
 export function setCurrentUser(cookies: Cookies, userId: string) {

@@ -2,42 +2,39 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
+	import { getAuthState, hasRole, switchCurrentUser } from '$lib/client/auth';
+	import type { User } from '$lib/types/user';
 
 	let { children } = $props();
 	let mobileMenuOpen = $state(false);
-	let currentUser = $state<{ id: string; name: string; department: string; position?: string; roles: string[] } | null>(null);
-	let users = $state<{ id: string; name: string; department: string; position?: string; roles: string[] }[]>([]);
+	let currentUser = $state<User | null>(null);
+	let users = $state<User[]>([]);
 	let switching = $state(false);
 
 	$effect(() => {
-		fetch('/api/auth')
-			.then((response) => response.json())
+		getAuthState()
 			.then((result) => {
 				currentUser = result.data;
-				users = result.users.filter(Boolean);
+				users = result.users;
 			});
 	});
 
 	async function switchUser(userId: string) {
 		switching = true;
-		const response = await fetch('/api/auth', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ userId })
-		});
-		if (response.ok) {
-			currentUser = (await response.json()).data;
+		try {
+			currentUser = await switchCurrentUser(userId);
 			window.location.assign('/');
 			return;
+		} finally {
+			switching = false;
 		}
-		switching = false;
 	}
 
 	let navigation = $derived([
 		{ href: '/', label: '工作台', icon: '⌂' },
-		...(!currentUser?.roles.includes('approver') ? [{ href: '/apply', label: '发起申请', icon: '+' }] : []),
-		{ href: '/applications', label: currentUser?.roles.includes('approver') ? '审批管理' : '我的申请', icon: '▤' },
-		...(currentUser?.roles.includes('approver') ? [{ href: '/statistics', label: '数据统计', icon: '◫' }] : [])
+		...(!hasRole(currentUser, 'approver') ? [{ href: '/apply', label: '发起申请', icon: '+' }] : []),
+		{ href: '/applications', label: hasRole(currentUser, 'approver') ? '审批管理' : '我的申请', icon: '▤' },
+		...(hasRole(currentUser, 'approver') ? [{ href: '/statistics', label: '数据统计', icon: '◫' }] : [])
 	]);
 
 	function isActive(href: string) {
@@ -70,7 +67,7 @@
 		<div class="sidebar-switcher">
 			<select class="user-switcher" aria-label="切换演示用户" disabled={switching} value={currentUser?.id ?? ''} onchange={(event) => switchUser(event.currentTarget.value)}>
 				<option value="" disabled>切换用户</option>
-				{#each users as user}<option value={user.id}>{user.name}（{user.roles.includes('approver') ? '审批人' : '员工'}）</option>{/each}
+				{#each users as user}<option value={user.id}>{user.name}（{hasRole(user, 'approver') ? '审批人' : '员工'}）</option>{/each}
 			</select>
 		</div>
 	</aside>

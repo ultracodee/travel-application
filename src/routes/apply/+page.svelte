@@ -8,6 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { getAuthState, hasRole } from '$lib/client/auth';
 
 	const transportOptions: TransportType[] = ['train', 'flight', 'car', 'other'];
 	const now = new Date();
@@ -39,12 +40,9 @@
 	let draftId = $state('');
 	let canApply = $state(true);
 	onMount(async () => {
-		const response = await fetch('/api/auth');
-		if (response.ok) {
-			const result = await response.json();
-			canApply = !result.data?.roles?.includes('approver');
-			if (result.data) form = { ...form, applicant: result.data };
-		}
+		const auth = await getAuthState();
+		canApply = !hasRole(auth.data, 'approver');
+		if (auth.data) form = { ...form, applicant: auth.data };
 		const id = page.url.searchParams.get('id');
 		if (id) {
 			const draftResponse = await fetch(`/api/applications/${id}`);
