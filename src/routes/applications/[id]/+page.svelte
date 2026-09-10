@@ -80,7 +80,13 @@
 	</section>
 	{#if (isApprover && (application.status === 'pending' || application.status === 'rejected')) || (isApplicant && application.status === 'draft')}
 		<section class="panel action-panel">
-			<h2>处理申请</h2><textarea rows="3" placeholder="填写审批意见（可选）" bind:value={comment}></textarea>
+			{#if isApprover}
+				<h2>处理申请</h2>
+				<textarea rows="3" placeholder="填写审批意见（可选）" bind:value={comment}></textarea>
+			{:else}
+				<h2>提交申请</h2>
+				<p class="submit-hint">草稿已保存，确认无误后即可提交审批。</p>
+			{/if}
 			<div class="actions">
 				{#if isApplicant && application.status === 'draft'}<button class="primary-button" disabled={acting} onclick={() => changeStatus('pending')}>确认提交审批</button>{/if}
 				{#if isApprover && application.status === 'rejected'}<button class="primary-button" disabled={acting} onclick={() => changeStatus('pending')}>重新提交审批</button>{/if}
@@ -102,6 +108,7 @@
 	.section-title { display: flex; justify-content: space-between; align-items: center; } .section-title h2, .action-panel h2 { margin: 0; font-size: 17px; } .muted { color: #8a95a8; font-size: 13px; }
 	.timeline { display: grid; gap: 18px; margin-top: 20px; } .record { display: flex; gap: 12px; align-items: flex-start; } .dot { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: #3975f6; } .record strong, .record small { display: block; } .record strong { color: #34415a; font-size: 13px; } .record small { margin-top: 5px; color: #8a95a8; font-size: 12px; }
 	.action-panel textarea { width: 100%; margin-top: 16px; padding: 11px 12px; border: 1px solid #dfe5ee; border-radius: 8px; resize: vertical; outline: none; } .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; } .danger-button { min-height: 42px; padding: 0 18px; border: 1px solid #f0c6cc; border-radius: 9px; background: #fff6f7; color: #b54855; font-weight: 650; } button:disabled { opacity: .6; cursor: wait; } .action-message { margin: 12px 0 0; color: #237a52; font-size: 13px; }
+	.submit-hint { margin: 8px 0 0; color: #8a95a8; font-size: 13px; }
 	.empty { min-height: 240px; display: grid; place-content: center; justify-items: center; gap: 16px; color: #8a95a8; } .empty strong { color: #44516a; }
 	@media (max-width: 620px) { .detail-header { flex-direction: column; } .cost { text-align: left; } .info-grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } .detail-panel, .action-panel { padding: 21px 18px; } .actions { flex-direction: column-reverse; } .actions button { width: 100%; } }
 </style>
