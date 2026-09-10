@@ -5,6 +5,29 @@
 
 	let { children } = $props();
 	let mobileMenuOpen = $state(false);
+	let currentUser = $state<{ id: string; name: string; department: string; position?: string; roles: string[] } | null>(null);
+	let users = $state<{ id: string; name: string; department: string; position?: string; roles: string[] }[]>([]);
+	let switching = $state(false);
+
+	$effect(() => {
+		fetch('/api/auth')
+			.then((response) => response.json())
+			.then((result) => {
+				currentUser = result.data;
+				users = result.users.filter(Boolean);
+			});
+	});
+
+	async function switchUser(userId: string) {
+		switching = true;
+		const response = await fetch('/api/auth', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ userId })
+		});
+		if (response.ok) currentUser = (await response.json()).data;
+		switching = false;
+	}
 
 	const navigation = [
 		{ href: '/', label: '工作台', icon: '⌂' },
@@ -41,8 +64,12 @@
 		</nav>
 
 		<div class="sidebar-profile">
-			<div class="avatar">张</div>
-			<div><strong>张三</strong><span>研发部 · 前端开发</span></div>
+			<div class="avatar">{currentUser?.name?.slice(0, 1) ?? '?'}</div>
+			<div class="profile-copy"><strong>{currentUser?.name ?? '未登录'}</strong><span>{currentUser ? `${currentUser.department} · ${currentUser.position ?? '用户'}` : '请选择演示用户'}</span></div>
+			<select class="user-switcher" aria-label="切换演示用户" disabled={switching} value={currentUser?.id ?? ''} onchange={(event) => switchUser(event.currentTarget.value)}>
+				<option value="" disabled>切换用户</option>
+				{#each users as user}<option value={user.id}>{user.name}（{user.roles.includes('approver') ? '审批人' : '员工'}）</option>{/each}
+			</select>
 		</div>
 	</aside>
 

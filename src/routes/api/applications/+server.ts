@@ -2,13 +2,19 @@ import { json } from '@sveltejs/kit';
 import { createApplication, listApplications } from '$lib/server/applicationRepository';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
 import type { TravelApplicationInput } from '$lib/types/application';
+import { getCurrentUser } from '$lib/server/auth';
+import { approver } from '$lib/server/applicationRepository';
 
-export function GET() {
+export function GET({ cookies }) {
+	if (!getCurrentUser(cookies)) return json({ message: '请先登录' }, { status: 401 });
 	return json({ data: listApplications() });
 }
 
-export async function POST({ request }) {
+export async function POST({ request, cookies }) {
 	try {
+		const user = getCurrentUser(cookies);
+		if (!user) return json({ message: '请先登录' }, { status: 401 });
+		if (!user.roles.includes('employee')) return json({ message: '当前用户没有提交申请权限' }, { status: 403 });
 		const input = (await request.json()) as TravelApplicationInput;
 		const errors = validateTravelApplication(input);
 
@@ -16,7 +22,7 @@ export async function POST({ request }) {
 			return json({ message: '表单校验失败', errors }, { status: 400 });
 		}
 
-		return json({ data: createApplication(input) }, { status: 201 });
+		return json({ data: createApplication(input, user, approver.id) }, { status: 201 });
 	} catch {
 		return json({ message: '请求体格式无效' }, { status: 400 });
 	}

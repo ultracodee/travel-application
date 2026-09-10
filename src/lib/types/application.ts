@@ -20,6 +20,7 @@ export interface ApprovalRecord {
 export interface TravelApplication {
 	id: string;
 	applicant: Applicant;
+	approverId: string;
 	from: string;
 	to: string;
 	startDate: string;

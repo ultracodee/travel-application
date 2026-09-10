@@ -8,6 +8,7 @@ import { changeApplicationStatus, createApplication } from '$lib/server/applicat
 const application: TravelApplication = {
 	id: 'TRV-TEST-001',
 	applicant: { id: 'U001', name: '张三', department: '研发部' },
+	approverId: 'U002',
 	from: '上海',
 	to: '杭州',
 	startDate: '2026-09-12',
@@ -65,11 +66,11 @@ describe('状态流转和统计', () => {
 	});
 
 	it('创建申请后可提交审批并记录审批意见', () => {
-		const created = createApplication(input());
+		const created = createApplication(input(), application.applicant);
 		expect(created.status).toBe('draft');
-		const pending = changeApplicationStatus(created.id, 'pending');
+		const pending = changeApplicationStatus(created.id, 'pending', 'U002');
 		expect(pending?.status).toBe('pending');
-		const approved = changeApplicationStatus(created.id, 'approved', '同意出差');
+		const approved = changeApplicationStatus(created.id, 'approved', 'U002', '同意出差');
 		expect(approved?.status).toBe('approved');
 		expect(approved?.approvalRecords.at(-1)?.comment).toBe('同意出差');
 	});

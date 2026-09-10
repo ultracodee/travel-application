@@ -1,15 +1,20 @@
 import { error, json } from '@sveltejs/kit';
 import { changeApplicationStatus, findApplication } from '$lib/server/applicationRepository';
 import type { ApplicationStatus } from '$lib/types/application';
+import { getCurrentUser } from '$lib/server/auth';
 
-export function GET({ params }) {
+export function GET({ params, cookies }) {
+	if (!getCurrentUser(cookies)) return json({ message: '请先登录' }, { status: 401 });
 	const application = findApplication(params.id);
 	if (!application) throw error(404, '申请不存在');
 	return json({ data: application });
 }
 
-export async function PATCH({ params, request }) {
+export async function PATCH({ params, request, cookies }) {
 	try {
+		const user = getCurrentUser(cookies);
+		if (!user) return json({ message: '请先登录' }, { status: 401 });
+		if (!user.roles.includes('approver')) return json({ message: '当前用户没有审批权限' }, { status: 403 });
 		const body = (await request.json()) as {
 			status?: Extract<ApplicationStatus, 'pending' | 'approved' | 'rejected'>;
 			comment?: string;
@@ -19,11 +24,13 @@ export async function PATCH({ params, request }) {
 			return json({ message: '不支持的状态' }, { status: 400 });
 		}
 
-		const application = changeApplicationStatus(params.id, body.status, body.comment);
+		const application = changeApplicationStatus(params.id, body.status, user.id, body.comment);
 		if (!application) throw error(404, '申请不存在');
 		return json({ data: application });
 	} catch (cause) {
 		if (cause instanceof SyntaxError) return json({ message: '请求体格式无效' }, { status: 400 });
+		if (cause instanceof Error && cause.message.includes('不能审批自己')) return json({ message: cause.message }, { status: 403 });
+		if (cause instanceof Error && cause.message.includes('指定审批人')) return json({ message: cause.message }, { status: 403 });
 		if (cause instanceof Error) return json({ message: cause.message }, { status: 409 });
 		throw cause;
 	}

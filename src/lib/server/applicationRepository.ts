@@ -7,7 +7,7 @@ import type {
 	TravelApplicationInput
 } from '$lib/types/application';
 
-const approver: Applicant = {
+export const approver: Applicant = {
 	id: 'U002',
 	name: '李经理',
 	department: '研发部',
@@ -18,6 +18,7 @@ const applications: TravelApplication[] = [
 	{
 		id: 'TRV-202609-001',
 		applicant: { id: 'U001', name: '张三', department: '研发部', position: '前端开发' },
+		approverId: approver.id,
 		from: '上海',
 		to: '杭州',
 		startDate: '2026-09-12',
@@ -53,10 +54,12 @@ export function findApplication(id: string): TravelApplication | undefined {
 	return applications.find((application) => application.id === id);
 }
 
-export function createApplication(input: TravelApplicationInput): TravelApplication {
+export function createApplication(input: TravelApplicationInput, applicant: Applicant, approverId = approver.id): TravelApplication {
 	const timestamp = now();
 	const application: TravelApplication = {
 		...input,
+		applicant: { ...applicant },
+		approverId,
 		id: nextId(),
 		status: 'draft',
 		approvalRecords: [],
@@ -70,10 +73,13 @@ export function createApplication(input: TravelApplicationInput): TravelApplicat
 export function changeApplicationStatus(
 	id: string,
 	status: Extract<ApplicationStatus, 'pending' | 'approved' | 'rejected'>,
+	actorId: string,
 	comment?: string
 ): TravelApplication | undefined {
 	const application = findApplication(id);
 	if (!application) return undefined;
+	if (application.applicant.id === actorId) throw new Error('申请人不能审批自己的申请');
+	if (application.approverId !== actorId) throw new Error('当前用户不是该申请的指定审批人');
 
 	assertTransition(application.status, status);
 	application.status = status;
