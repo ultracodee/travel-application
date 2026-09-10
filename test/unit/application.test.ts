@@ -119,6 +119,31 @@ describe('状态流转和统计', () => {
 		});
 	});
 
+	it('空数据时返回完整月份轴和空系列', () => {
+		expect(countByDepartmentMonthlyTrend([], '2026-09-10')).toEqual({
+			months: [
+				'2025-10',
+				'2025-11',
+				'2025-12',
+				'2026-01',
+				'2026-02',
+				'2026-03',
+				'2026-04',
+				'2026-05',
+				'2026-06',
+				'2026-07',
+				'2026-08',
+				'2026-09'
+			],
+			series: []
+		});
+	});
+
+	it('拒绝无效的月份数量和参考日期', () => {
+		expect(getRecentMonths('2026-09-10', 0)).toEqual([]);
+		expect(() => getRecentMonths('invalid-date')).toThrow('无效的参考日期');
+	});
+
 	it('创建申请后可提交审批并记录审批意见', () => {
 		const created = createApplication(input(), application.applicant);
 		expect(created.status).toBe('draft');
