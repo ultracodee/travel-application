@@ -25,7 +25,11 @@
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ userId })
 		});
-		if (response.ok) currentUser = (await response.json()).data;
+		if (response.ok) {
+			currentUser = (await response.json()).data;
+			window.location.assign('/');
+			return;
+		}
 		switching = false;
 	}
 
