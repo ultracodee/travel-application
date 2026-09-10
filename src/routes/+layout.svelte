@@ -35,7 +35,7 @@
 
 	let navigation = $derived([
 		{ href: '/', label: '工作台', icon: '⌂' },
-		{ href: '/apply', label: '发起申请', icon: '+' },
+		...(!currentUser?.roles.includes('approver') ? [{ href: '/apply', label: '发起申请', icon: '+' }] : []),
 		{ href: '/applications', label: currentUser?.roles.includes('approver') ? '审批管理' : '我的申请', icon: '▤' },
 		...(currentUser?.roles.includes('approver') ? [{ href: '/statistics', label: '数据统计', icon: '◫' }] : [])
 	]);

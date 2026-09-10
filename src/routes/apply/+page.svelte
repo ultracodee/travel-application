@@ -37,10 +37,12 @@
 	let submitting = $state(false);
 	let submittedId = $state('');
 	let draftId = $state('');
+	let canApply = $state(true);
 	onMount(async () => {
 		const response = await fetch('/api/auth');
 		if (response.ok) {
 			const result = await response.json();
+			canApply = !result.data?.roles?.includes('approver');
 			if (result.data) form = { ...form, applicant: result.data };
 		}
 		const id = page.url.searchParams.get('id');
@@ -227,6 +229,9 @@
 	</div>
 </div>
 
+{#if !canApply}
+	<section class="panel denied"><strong>专职审批角色无需发起申请</strong><span>请使用员工账号提交差旅申请。</span></section>
+{:else}
 {#if !previewReady}
 <form class="application-form" onsubmit={(event) => { event.preventDefault(); preparePreview(); }}>
 	<section class="panel form-panel">
@@ -404,6 +409,7 @@
 		</button>
 	</div>
 </section>
+{/if}
 {/if}
 
 <style>
@@ -596,6 +602,7 @@
 		padding-bottom: 12px;
 	}
 	.preview-panel { padding: 28px; }
+	.denied { min-height: 220px; display: grid; place-content: center; justify-items: center; gap: 8px; color: #8a95a8; } .denied strong { color: #44516a; font-size: 16px; }
 	.preview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
 	.preview-heading h2 { margin: 0; font-size: 19px; }
 	.preview-heading p { margin: 6px 0 0; color: #8a95a8; font-size: 13px; }
