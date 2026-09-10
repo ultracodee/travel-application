@@ -68,7 +68,7 @@ describe('状态流转和统计', () => {
 	it('创建申请后可提交审批并记录审批意见', () => {
 		const created = createApplication(input(), application.applicant);
 		expect(created.status).toBe('draft');
-		const pending = changeApplicationStatus(created.id, 'pending', 'U002');
+		const pending = changeApplicationStatus(created.id, 'pending', 'U001');
 		expect(pending?.status).toBe('pending');
 		const approved = changeApplicationStatus(created.id, 'approved', 'U002', '同意出差');
 		expect(approved?.status).toBe('approved');

@@ -83,8 +83,12 @@ export function changeApplicationStatus(
 ): TravelApplication | undefined {
 	const application = findApplication(id);
 	if (!application) return undefined;
-	if (application.applicant.id === actorId) throw new Error('申请人不能审批自己的申请');
-	if (application.approverId !== actorId) throw new Error('当前用户不是该申请的指定审批人');
+	if (status !== 'pending') {
+		if (application.applicant.id === actorId) throw new Error('申请人不能审批自己的申请');
+		if (application.approverId !== actorId) throw new Error('当前用户不是该申请的指定审批人');
+	} else if (application.applicant.id !== actorId) {
+		throw new Error('只有申请人可以提交自己的草稿');
+	}
 
 	assertTransition(application.status, status);
 	application.status = status;

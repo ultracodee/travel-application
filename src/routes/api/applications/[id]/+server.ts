@@ -18,7 +18,6 @@ export async function PATCH({ params, request, cookies }) {
 	try {
 		const user = getCurrentUser(cookies);
 		if (!user) return json({ message: '请先登录' }, { status: 401 });
-		if (!user.roles.includes('approver')) return json({ message: '当前用户没有审批权限' }, { status: 403 });
 		const body = (await request.json()) as {
 			status?: Extract<ApplicationStatus, 'pending' | 'approved' | 'rejected'>;
 			comment?: string;
@@ -26,6 +25,13 @@ export async function PATCH({ params, request, cookies }) {
 
 		if (!body.status || !['pending', 'approved', 'rejected'].includes(body.status)) {
 			return json({ message: '不支持的状态' }, { status: 400 });
+		}
+		if (body.status === 'pending') {
+			if (applicationOwner(params.id, user.id) === false) {
+				return json({ message: '只有申请人可以提交自己的草稿' }, { status: 403 });
+			}
+		} else if (!user.roles.includes('approver')) {
+			return json({ message: '当前用户没有审批权限' }, { status: 403 });
 		}
 
 		const application = changeApplicationStatus(params.id, body.status, user.id, body.comment);
@@ -38,4 +44,9 @@ export async function PATCH({ params, request, cookies }) {
 		if (cause instanceof Error) return json({ message: cause.message }, { status: 409 });
 		throw cause;
 	}
+}
+
+function applicationOwner(id: string, userId: string) {
+	const application = findApplication(id);
+	return application ? application.applicant.id === userId : false;
 }

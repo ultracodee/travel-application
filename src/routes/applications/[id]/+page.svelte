@@ -10,12 +10,21 @@
 	let comment = $state('');
 	let acting = $state(false);
 	let isApprover = $state(false);
+	let isApplicant = $state(false);
 
 	onMount(async () => {
 		const auth = await fetch('/api/auth');
-		if (auth.ok) isApprover = (await auth.json()).data?.roles?.includes('approver') ?? false;
+		if (auth.ok) {
+			const user = (await auth.json()).data;
+			isApprover = user?.roles?.includes('approver') ?? false;
+			isApplicant = user?.id === application?.applicant.id;
+		}
 		const response = await fetch(`/api/applications/${page.params.id}`);
-		if (response.ok) application = (await response.json()).data;
+		if (response.ok) {
+			application = (await response.json()).data;
+			const authResponse = await fetch('/api/auth');
+			if (authResponse.ok) isApplicant = (await authResponse.json()).data?.id === application?.applicant.id;
+		}
 		else errorMessage = '申请不存在或已被删除。';
 		loading = false;
 	});
@@ -69,11 +78,12 @@
 			<div class="timeline">{#each application.approvalRecords as record}<div class="record"><span class="dot"></span><div><strong>{record.approver.name} · {record.action === 'approved' ? '通过' : '驳回'}</strong><small>{record.operatedAt} {#if record.comment} · {record.comment}{/if}</small></div></div>{/each}</div>
 		{/if}
 	</section>
-	{#if isApprover && (application.status === 'pending' || application.status === 'draft' || application.status === 'rejected')}
+	{#if (isApprover && (application.status === 'pending' || application.status === 'rejected')) || (isApplicant && application.status === 'draft')}
 		<section class="panel action-panel">
 			<h2>处理申请</h2><textarea rows="3" placeholder="填写审批意见（可选）" bind:value={comment}></textarea>
 			<div class="actions">
-				{#if application.status === 'draft' || application.status === 'rejected'}<button class="primary-button" disabled={acting} onclick={() => changeStatus('pending')}>提交审批</button>{/if}
+				{#if isApplicant && application.status === 'draft'}<button class="primary-button" disabled={acting} onclick={() => changeStatus('pending')}>确认提交审批</button>{/if}
+				{#if isApprover && application.status === 'rejected'}<button class="primary-button" disabled={acting} onclick={() => changeStatus('pending')}>重新提交审批</button>{/if}
 				{#if application.status === 'pending'}<button class="danger-button" disabled={acting} onclick={() => changeStatus('rejected')}>驳回</button><button class="primary-button" disabled={acting} onclick={() => changeStatus('approved')}>通过</button>{/if}
 			</div>
 			{#if actionMessage}<p class="action-message">{actionMessage}</p>{/if}
