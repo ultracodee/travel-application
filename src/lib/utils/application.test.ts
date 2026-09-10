@@ -44,7 +44,7 @@ describe('差旅申请校验', () => {
 		expect(errors.to).toBe('请输入目的地');
 		expect(errors.dateRange).toBe('结束日期不能早于开始日期');
 		expect(errors.reason).toBe('请输入出差事由');
-		expect(errors.estimatedCost).toBe('预计费用必须是非负数字');
+		expect(errors.estimatedCost).toBe('请输入大于 0 的预计费用');
 	});
 });
 

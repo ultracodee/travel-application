@@ -9,6 +9,8 @@
 	import { onMount } from 'svelte';
 
 	const transportOptions: TransportType[] = ['train', 'flight', 'car', 'other'];
+	const now = new Date();
+	const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
 	let form = $state<TravelApplicationInput>({
 		applicant: {
@@ -19,7 +21,7 @@
 		},
 		from: '',
 		to: '',
-		startDate: '',
+		startDate: today,
 		endDate: '',
 		reason: '',
 		transport: 'train',

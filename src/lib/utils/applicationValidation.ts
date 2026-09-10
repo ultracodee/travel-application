@@ -18,8 +18,8 @@ export function validateTravelApplication(input: TravelApplicationInput): Valida
 		errors.dateRange = '结束日期不能早于开始日期';
 	}
 	if (!input.reason.trim()) errors.reason = '请输入出差事由';
-	if (!Number.isFinite(input.estimatedCost) || input.estimatedCost < 0) {
-		errors.estimatedCost = '预计费用必须是非负数字';
+	if (!Number.isFinite(input.estimatedCost) || input.estimatedCost <= 0) {
+		errors.estimatedCost = '请输入大于 0 的预计费用';
 	}
 
 	return errors;
