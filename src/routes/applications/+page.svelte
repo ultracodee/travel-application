@@ -72,13 +72,15 @@
 							<td>{TRANSPORT_LABEL[item.transport]}</td>
 							<td>¥ {item.estimatedCost.toFixed(2)}</td>
 							<td><span class={`status status-${item.status}`}>{APPLICATION_STATUS_LABEL[item.status]}</span></td>
-							<td class="row-actions">
-								{#if !isApprover && item.status === 'draft'}
-									<a class="detail-link" href={`/apply?id=${item.id}`}>编辑</a>
-									<button class="delete-button" disabled={deletingId === item.id} onclick={() => deleteDraft(item.id)}>删除</button>
-								{:else}
-									<a class="detail-link" href={`/applications/${item.id}`}>查看详情</a>
-								{/if}
+							<td>
+								<div class="row-actions">
+									{#if !isApprover && item.status === 'draft'}
+										<a class="detail-link" href={`/apply?id=${item.id}`}>编辑</a>
+										<button class="delete-button" disabled={deletingId === item.id} onclick={() => deleteDraft(item.id)}>删除</button>
+									{:else}
+										<a class="detail-link" href={`/applications/${item.id}`}>查看详情</a>
+									{/if}
+								</div>
 							</td>
 						</tr>
 					{/each}
@@ -103,7 +105,7 @@
 	td { padding: 16px 10px; border-bottom: 1px solid #edf0f5; color: #46536b; font-size: 13px; white-space: nowrap; }
 	td strong, td small { display: block; } td small { margin-top: 4px; color: #9aa4b5; font-size: 11px; }
 	.id-link, .detail-link { color: #3975f6; font-weight: 650; } .detail-link { font-size: 12px; }
-	.row-actions { display: flex; align-items: center; gap: 12px; } .delete-button { padding: 0; border: 0; background: transparent; color: #d45c68; font-size: 12px; font-weight: 650; cursor: pointer; } .delete-button:disabled { opacity: .55; cursor: wait; }
+	.row-actions { display: flex; align-items: center; gap: 12px; min-height: 18px; } .delete-button { padding: 0; border: 0; background: transparent; color: #d45c68; font-size: 12px; font-weight: 650; cursor: pointer; } .delete-button:disabled { opacity: .55; cursor: wait; }
 	.muted { color: #9aa4b5; font-size: 11px; }
 	.status { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 650; }
 	.status-draft { color: #667085; background: #f0f2f5; } .status-pending { color: #946b16; background: #fff5d8; }
