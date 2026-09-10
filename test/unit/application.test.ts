@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { TravelApplication } from '$lib/types/application';
-import { countByDepartment, countByStatus } from '$lib/utils/applicationStatistics';
+import {
+	countByDepartment,
+	countByDepartmentMonthlyTrend,
+	countByStatus,
+	countBySubmittedDepartment,
+	countBySubmittedStatus,
+	getRecentMonths
+} from '$lib/utils/applicationStatistics';
 import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
 import { changeApplicationStatus, createApplication } from '$lib/server/applicationRepository';
@@ -59,10 +66,57 @@ describe('状态流转和统计', () => {
 		const applications = [
 			application,
 			{ ...application, id: 'TRV-TEST-002', status: 'approved' as const },
-			{ ...application, id: 'TRV-TEST-003', applicant: { ...application.applicant, department: '销售部' }, status: 'rejected' as const }
+			{ ...application, id: 'TRV-TEST-003', applicant: { ...application.applicant, department: '销售部' }, status: 'rejected' as const },
+			{ ...application, id: 'TRV-TEST-004', applicant: { ...application.applicant, department: '销售部' }, status: 'draft' as const }
 		];
-		expect(countByStatus(applications)).toEqual({ draft: 0, pending: 1, approved: 1, rejected: 1 });
-		expect(countByDepartment(applications)).toEqual({ 研发部: 2, 销售部: 1 });
+		expect(countByStatus(applications)).toEqual({ draft: 1, pending: 1, approved: 1, rejected: 1 });
+		expect(countBySubmittedStatus(applications)).toEqual({ pending: 1, approved: 1, rejected: 1 });
+		expect(countByDepartment(applications)).toEqual({ 研发部: 2, 销售部: 2 });
+		expect(countBySubmittedDepartment(applications)).toEqual({ 研发部: 2, 销售部: 1 });
+	});
+
+	it('按出发日期归属最近 12 个月的部门趋势并排除草稿', () => {
+		const applications = [
+			application,
+			{ ...application, id: 'TRV-TEST-005', startDate: '2026-08-20', applicant: { ...application.applicant, department: '市场部' } },
+			{ ...application, id: 'TRV-TEST-006', startDate: '2026-09-20', applicant: { ...application.applicant, department: '研发部' } },
+			{ ...application, id: 'TRV-TEST-007', startDate: '2026-09-21', status: 'draft' as const, applicant: { ...application.applicant, department: '客户成功部' } },
+			{ ...application, id: 'TRV-TEST-008', startDate: '2025-09-20' }
+		];
+		expect(getRecentMonths('2026-09-10')).toEqual([
+			'2025-10',
+			'2025-11',
+			'2025-12',
+			'2026-01',
+			'2026-02',
+			'2026-03',
+			'2026-04',
+			'2026-05',
+			'2026-06',
+			'2026-07',
+			'2026-08',
+			'2026-09'
+		]);
+		expect(countByDepartmentMonthlyTrend(applications, '2026-09-10')).toEqual({
+			months: [
+				'2025-10',
+				'2025-11',
+				'2025-12',
+				'2026-01',
+				'2026-02',
+				'2026-03',
+				'2026-04',
+				'2026-05',
+				'2026-06',
+				'2026-07',
+				'2026-08',
+				'2026-09'
+			],
+			series: [
+				{ department: '市场部', data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0] },
+				{ department: '研发部', data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2] }
+			]
+		});
 	});
 
 	it('创建申请后可提交审批并记录审批意见', () => {
