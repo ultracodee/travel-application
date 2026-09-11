@@ -7,6 +7,11 @@ export interface DepartmentMonthlyTrend {
 	data: number[];
 }
 
+export interface MonthlyTrend {
+	months: string[];
+	data: number[];
+}
+
 export function getSubmittedApplications(applications: TravelApplication[]): TravelApplication[] {
 	return applications.filter((application) => application.status !== 'draft');
 }
@@ -90,4 +95,21 @@ export function countByDepartmentMonthlyTrend(
 			.sort(([left], [right]) => left.localeCompare(right, 'zh-CN'))
 			.map(([department, data]) => ({ department, data }))
 	};
+}
+
+export function sumByMonth(
+	applications: TravelApplication[],
+	referenceDate: Date | string = new Date(),
+	monthCount = 12
+): MonthlyTrend {
+	const months = getRecentMonths(referenceDate, monthCount);
+	const monthIndex = new Map(months.map((month, index) => [month, index]));
+	const data = Array.from({ length: months.length }, () => 0);
+
+	for (const application of getSubmittedApplications(applications)) {
+		const index = monthIndex.get(application.startDate.slice(0, 7));
+		if (index !== undefined) data[index] += application.estimatedCost;
+	}
+
+	return { months, data };
 }

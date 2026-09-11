@@ -6,7 +6,8 @@ import {
 	countByStatus,
 	countBySubmittedDepartment,
 	countBySubmittedStatus,
-	getRecentMonths
+	getRecentMonths,
+	sumByMonth
 } from '$lib/utils/applicationStatistics';
 import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
@@ -142,6 +143,19 @@ describe('状态流转和统计', () => {
 	it('拒绝无效的月份数量和参考日期', () => {
 		expect(getRecentMonths('2026-09-10', 0)).toEqual([]);
 		expect(() => getRecentMonths('invalid-date')).toThrow('无效的参考日期');
+	});
+
+	it('按出发月份汇总预计费用并排除草稿', () => {
+		expect(
+			sumByMonth(
+				[
+					{ ...application, estimatedCost: 1000, startDate: '2026-09-01' },
+					{ ...application, estimatedCost: 2000, startDate: '2026-09-15', status: 'approved' as const },
+					{ ...application, estimatedCost: 9000, startDate: '2026-09-20', status: 'draft' as const }
+				],
+				'2026-09-10'
+			).data.at(-1)
+		).toBe(3000);
 	});
 
 	it('创建申请后可提交审批并记录审批意见', () => {
