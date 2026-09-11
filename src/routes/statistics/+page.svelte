@@ -13,7 +13,7 @@
 	import { getAuthState, hasRole } from '$lib/client/auth';
 
 	const statusColors = { pending: '#e6b83f', approved: '#36ae73', rejected: '#d65b68' } as const;
-	const lineColors = ['#3975f6', '#e6b83f', '#36ae73'];
+	const departmentColors = ['#3975f6', '#e6b83f', '#36ae73'];
 	let applications = $state<TravelApplication[]>([]);
 	let isApprover = $state(false);
 	let loading = $state(true);
@@ -45,9 +45,9 @@
 		tooltip: { trigger: 'axis' },
 		legend: { top: 0, right: 0, icon: 'circle', textStyle: { color: '#68758b', fontSize: 12 } },
 		grid: { left: 12, right: 20, top: 38, bottom: 16, containLabel: true },
-		xAxis: { type: 'category', boundaryGap: false, data: monthlyTrend.months, axisLabel: { color: '#68758b', formatter: (value: string) => value.slice(2) } },
+		xAxis: { type: 'category', data: monthlyTrend.months, axisLabel: { color: '#68758b', formatter: (value: string) => value.slice(2) } },
 		yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#edf1f7' } }, axisLabel: { color: '#68758b' } },
-		series: monthlyTrend.series.map((item, index) => ({ name: item.department, type: 'line', smooth: true, symbol: 'circle', symbolSize: 7, data: item.data, lineStyle: { width: 3, color: lineColors[index % lineColors.length] }, itemStyle: { color: lineColors[index % lineColors.length] }, areaStyle: { opacity: 0.06 } }))
+		series: monthlyTrend.series.map((item, index) => ({ name: item.department, type: 'bar', stack: 'total', barMaxWidth: 34, data: item.data, itemStyle: { color: departmentColors[index % departmentColors.length], borderRadius: index === monthlyTrend.series.length - 1 ? [5, 5, 0, 0] : 0 } }))
 	});
 	let costOption = $derived<EChartsOption>({
 		tooltip: { trigger: 'axis', valueFormatter: (value) => `¥ ${Number(value).toLocaleString()}` },
@@ -76,7 +76,7 @@
 	<div class="metric-card"><span>审批通过率</span><strong>{approvalRate}%</strong><small>仅统计已完成审批</small></div>
 	<div class="metric-card"><span>总预计费用</span><strong>¥ {totalCost.toLocaleString()}</strong><small>已提交申请预计费用</small></div>
 </section>
-<section class="panel trend-card"><div class="card-heading"><div><h2>部门月度出差趋势</h2><p>按出发日期所在月份统计，最近 12 个月</p></div><span>申请单量 · 不含草稿</span></div><EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势折线图" /></section>
+<section class="panel trend-card"><div class="card-heading"><div><h2>部门月度出差趋势</h2><p>按出发日期所在月份统计，最近 12 个月</p></div><span>堆叠申请单量 · 不含草稿</span></div><EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势堆叠柱状图" /></section>
 <section class="panel cost-card"><div class="card-heading"><div><h2>月度预计费用</h2><p>按出发月份汇总所有已提交申请的预计费用</p></div><span>人民币</span></div><EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" /></section>
 <section class="stats-grid">
 	<div class="panel chart-card"><div class="card-heading"><h2>申请状态分布</h2><span>已提交申请</span></div><EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" /></div>
