@@ -78,13 +78,14 @@
 	<div class="metric-card"><span>审批通过率</span><strong>{approvalRate}%</strong><small>仅统计已完成审批</small></div>
 	<div class="metric-card"><span>总预计费用</span><strong>¥ {totalCost.toLocaleString()}</strong><small>已提交申请预计费用</small></div>
 </section>
+<section class="panel insight"><h2>费用概览</h2><div><span>平均预计费用</span><strong>¥ {totalSubmitted ? (totalCost / totalSubmitted).toFixed(2) : '0.00'}</strong></div><div><span>最高单笔费用</span><strong>¥ {totalSubmitted ? Math.max(...submittedApplications.map((item) => item.estimatedCost)).toFixed(2) : '0.00'}</strong></div><div><span>完成审批量</span><strong>{completedCount}</strong></div></section>
 <section class="panel trend-card"><div class="card-heading"><div><h2>部门月度出差趋势</h2><p>按出发日期所在月份统计，{selectedRange === 'currentYear' ? '今年' : selectedRange === 'halfYear' ? '最近 6 个月' : selectedRange === 'quarter' ? '最近 3 个月' : '最近 12 个月'}</p></div><span>堆叠申请单量 · 不含草稿</span></div><EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势堆叠柱状图" /></section>
 <section class="panel cost-card"><div class="card-heading"><div><h2>月度预计费用</h2><p>按出发月份汇总所选范围内已提交申请的预计费用</p></div><span>人民币</span></div><EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" /></section>
 <section class="stats-grid">
 	<div class="panel chart-card"><div class="card-heading"><h2>申请状态分布</h2><span>已提交申请</span></div><EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" /></div>
 	<div class="panel chart-card"><div class="card-heading"><h2>部门申请单量</h2><span>已提交申请</span></div><EChart option={departmentOption} height="280px" ariaLabel="部门申请单量柱状图" /></div>
 </section>
-<section class="panel insight"><h2>费用概览</h2><div><span>平均预计费用</span><strong>¥ {totalSubmitted ? (totalCost / totalSubmitted).toFixed(2) : '0.00'}</strong></div><div><span>最高单笔费用</span><strong>¥ {totalSubmitted ? Math.max(...submittedApplications.map((item) => item.estimatedCost)).toFixed(2) : '0.00'}</strong></div><div><span>完成审批量</span><strong>{completedCount}</strong></div></section>{/if}
+{/if}
 
 <style>
 	.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; } .metric-card { padding: 18px 20px; border: 1px solid #e8edf5; border-radius: 14px; background: linear-gradient(145deg, #fff, #f8faff); box-shadow: 0 8px 20px #203b6810; } .metric-card span, .metric-card small { display: block; color: #8a95a8; font-size: 12px; } .metric-card strong { display: block; margin: 8px 0 4px; color: #34415a; font-size: 25px; } .metric-card small { font-size: 11px; }
