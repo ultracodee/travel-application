@@ -79,11 +79,11 @@
 	<div class="metric-card"><span>总预计费用</span><strong>¥ {totalCost.toLocaleString()}</strong><small>已提交申请预计费用</small></div>
 </section>
 <section class="panel insight"><h2>费用概览</h2><div><span>平均预计费用</span><strong>¥ {totalSubmitted ? (totalCost / totalSubmitted).toFixed(2) : '0.00'}</strong></div><div><span>最高单笔费用</span><strong>¥ {totalSubmitted ? Math.max(...submittedApplications.map((item) => item.estimatedCost)).toFixed(2) : '0.00'}</strong></div><div><span>完成审批量</span><strong>{completedCount}</strong></div></section>
-<section class="panel trend-card"><div class="card-heading"><div><h2>部门月度出差趋势</h2><p>按出发日期所在月份统计，{selectedRange === 'currentYear' ? '今年' : selectedRange === 'halfYear' ? '最近 6 个月' : selectedRange === 'quarter' ? '最近 3 个月' : '最近 12 个月'}</p></div><span>堆叠申请单量 · 不含草稿</span></div><EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势堆叠柱状图" /></section>
-<section class="panel cost-card"><div class="card-heading"><div><h2>月度预计费用</h2><p>按出发月份汇总所选范围内已提交申请的预计费用</p></div><span>人民币</span></div><EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" /></section>
+<section class="panel trend-card"><div class="card-heading"><div><h2>部门月度出差趋势</h2><p>按出发日期所在月份统计，{selectedRange === 'currentYear' ? '今年' : selectedRange === 'halfYear' ? '最近 6 个月' : selectedRange === 'quarter' ? '最近 3 个月' : '最近 12 个月'}</p></div><span>堆叠申请单量 · 不含草稿</span></div>{#key selectedRange}<EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势堆叠柱状图" />{/key}</section>
+<section class="panel cost-card"><div class="card-heading"><div><h2>月度预计费用</h2><p>按出发月份汇总所选范围内已提交申请的预计费用</p></div><span>人民币</span></div>{#key selectedRange}<EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" />{/key}</section>
 <section class="stats-grid">
-	<div class="panel chart-card"><div class="card-heading"><h2>申请状态分布</h2><span>已提交申请</span></div><EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" /></div>
-	<div class="panel chart-card"><div class="card-heading"><h2>部门申请单量</h2><span>已提交申请</span></div><EChart option={departmentOption} height="280px" ariaLabel="部门申请单量柱状图" /></div>
+	<div class="panel chart-card"><div class="card-heading"><h2>申请状态分布</h2><span>所选范围 · 已提交申请</span></div>{#key selectedRange}<EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" />{/key}</div>
+	<div class="panel chart-card"><div class="card-heading"><h2>部门申请单量</h2><span>所选范围 · 已提交申请</span></div>{#key selectedRange}<EChart option={departmentOption} height="280px" ariaLabel="部门申请单量柱状图" />{/key}</div>
 </section>
 {/if}
 
