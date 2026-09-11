@@ -38,6 +38,6 @@ describe('Pagination.svelte', () => {
 		render(Pagination, { page: 1, pageSize: 10, total: 35, totalPages: 4, onPageChange });
 
 		await page.getByRole('button', { name: '2' }).click();
-		expect(onPageChange).toHaveBeenCalledWith(2);
+		await vi.waitFor(() => expect(onPageChange).toHaveBeenCalledWith(2));
 	});
 });

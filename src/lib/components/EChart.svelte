@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import * as echarts from 'echarts';
 	import type { EChartsOption } from 'echarts';
 
 	let {
@@ -14,23 +13,36 @@
 	} = $props();
 
 	let container = $state<HTMLDivElement>();
-	let chart: echarts.ECharts | undefined;
+	let chart: import('echarts/core').ECharts | undefined;
 
 	$effect(() => {
 		if (chart) chart.setOption(option, true);
 	});
 
 	onMount(() => {
-		if (!container) return;
+		let resizeObserver: ResizeObserver | undefined;
+		let disposed = false;
 
-		chart = echarts.init(container);
-		chart.setOption(option, true);
+		void (async () => {
+			const [echarts, { BarChart, LineChart, PieChart }, { GridComponent, LegendComponent, TitleComponent, TooltipComponent }, { CanvasRenderer }] = await Promise.all([
+				import('echarts/core'),
+				import('echarts/charts'),
+				import('echarts/components'),
+				import('echarts/renderers')
+			]);
+			if (!container || disposed) return;
 
-		const resizeObserver = new ResizeObserver(() => chart?.resize());
-		resizeObserver.observe(container);
+			echarts.use([BarChart, LineChart, PieChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer]);
+			chart = echarts.init(container);
+			chart.setOption(option, true);
+
+			resizeObserver = new ResizeObserver(() => chart?.resize());
+			resizeObserver.observe(container);
+		})();
 
 		return () => {
-			resizeObserver.disconnect();
+			disposed = true;
+			resizeObserver?.disconnect();
 			chart?.dispose();
 			chart = undefined;
 		};
