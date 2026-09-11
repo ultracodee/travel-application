@@ -12,6 +12,8 @@ export interface MonthlyTrend {
 	data: number[];
 }
 
+export type StatisticsRange = 'year' | 'halfYear' | 'quarter' | 'currentYear';
+
 export function getSubmittedApplications(applications: TravelApplication[]): TravelApplication[] {
 	return applications.filter((application) => application.status !== 'draft');
 }
@@ -69,12 +71,36 @@ export function getRecentMonths(referenceDate: Date | string = new Date(), month
 	});
 }
 
+export function getMonthsByRange(
+	referenceDate: Date | string = new Date(),
+	range: StatisticsRange = 'year'
+): string[] {
+	const date = new Date(referenceDate);
+	if (Number.isNaN(date.getTime())) throw new Error('无效的参考日期');
+
+	if (range === 'currentYear') {
+		return getRecentMonths(date, date.getMonth() + 1).slice(0, date.getMonth() + 1);
+	}
+
+	const monthCount = range === 'halfYear' ? 6 : range === 'quarter' ? 3 : 12;
+	return getRecentMonths(date, monthCount);
+}
+
+export function filterApplicationsByRange(
+	applications: TravelApplication[],
+	referenceDate: Date | string = new Date(),
+	range: StatisticsRange = 'year'
+): TravelApplication[] {
+	const months = new Set(getMonthsByRange(referenceDate, range));
+	return getSubmittedApplications(applications).filter((application) => months.has(application.startDate.slice(0, 7)));
+}
+
 export function countByDepartmentMonthlyTrend(
 	applications: TravelApplication[],
 	referenceDate: Date | string = new Date(),
-	monthCount = 12
+	monthCount: number | StatisticsRange = 12
 ): { months: string[]; series: DepartmentMonthlyTrend[] } {
-	const months = getRecentMonths(referenceDate, monthCount);
+	const months = typeof monthCount === 'number' ? getRecentMonths(referenceDate, monthCount) : getMonthsByRange(referenceDate, monthCount);
 	const monthIndex = new Map(months.map((month, index) => [month, index]));
 	const values = new Map<string, number[]>();
 
@@ -100,9 +126,9 @@ export function countByDepartmentMonthlyTrend(
 export function sumByMonth(
 	applications: TravelApplication[],
 	referenceDate: Date | string = new Date(),
-	monthCount = 12
+	monthCount: number | StatisticsRange = 12
 ): MonthlyTrend {
-	const months = getRecentMonths(referenceDate, monthCount);
+	const months = typeof monthCount === 'number' ? getRecentMonths(referenceDate, monthCount) : getMonthsByRange(referenceDate, monthCount);
 	const monthIndex = new Map(months.map((month, index) => [month, index]));
 	const data = Array.from({ length: months.length }, () => 0);
 

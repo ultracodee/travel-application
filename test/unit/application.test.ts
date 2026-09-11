@@ -6,7 +6,9 @@ import {
 	countByStatus,
 	countBySubmittedDepartment,
 	countBySubmittedStatus,
+	filterApplicationsByRange,
 	getRecentMonths,
+	getMonthsByRange,
 	sumByMonth
 } from '$lib/utils/applicationStatistics';
 import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
@@ -156,6 +158,32 @@ describe('状态流转和统计', () => {
 				'2026-09-10'
 			).data.at(-1)
 		).toBe(3000);
+	});
+
+	it('支持最近半年、最近三月和今年的时间范围', () => {
+		expect(getMonthsByRange('2026-09-10', 'halfYear')).toHaveLength(6);
+		expect(getMonthsByRange('2026-09-10', 'quarter')).toHaveLength(3);
+		expect(getMonthsByRange('2026-09-10', 'currentYear')).toEqual([
+			'2026-01',
+			'2026-02',
+			'2026-03',
+			'2026-04',
+			'2026-05',
+			'2026-06',
+			'2026-07',
+			'2026-08',
+			'2026-09'
+		]);
+		const filtered = filterApplicationsByRange(
+			[
+				{ ...application, startDate: '2026-09-01' },
+				{ ...application, id: 'TRV-TEST-009', startDate: '2025-10-01' },
+				{ ...application, id: 'TRV-TEST-010', startDate: '2026-09-02', status: 'draft' as const }
+			],
+			'2026-09-10',
+			'quarter'
+		);
+		expect(filtered.map((item) => item.id)).toEqual(['TRV-TEST-001']);
 	});
 
 	it('创建申请后可提交审批并记录审批意见', () => {

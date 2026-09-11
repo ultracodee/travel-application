@@ -7,7 +7,8 @@
 		countByDepartmentMonthlyTrend,
 		countBySubmittedDepartment,
 		countBySubmittedStatus,
-		getSubmittedApplications,
+		filterApplicationsByRange,
+		type StatisticsRange,
 		sumByMonth
 	} from '$lib/utils/applicationStatistics';
 	import { getAuthState, hasRole } from '$lib/client/auth';
@@ -17,11 +18,12 @@
 	let applications = $state<TravelApplication[]>([]);
 	let isApprover = $state(false);
 	let loading = $state(true);
-	let submittedApplications = $derived(getSubmittedApplications(applications));
-	let statusCounts = $derived(countBySubmittedStatus(applications));
-	let departmentCounts = $derived(countBySubmittedDepartment(applications));
-	let monthlyTrend = $derived(countByDepartmentMonthlyTrend(applications));
-	let monthlyCost = $derived(sumByMonth(applications));
+	let selectedRange = $state<StatisticsRange>('year');
+	let submittedApplications = $derived(filterApplicationsByRange(applications, new Date(), selectedRange));
+	let statusCounts = $derived(countBySubmittedStatus(submittedApplications));
+	let departmentCounts = $derived(countBySubmittedDepartment(submittedApplications));
+	let monthlyTrend = $derived(countByDepartmentMonthlyTrend(submittedApplications, new Date(), selectedRange));
+	let monthlyCost = $derived(sumByMonth(submittedApplications, new Date(), selectedRange));
 	let totalSubmitted = $derived(submittedApplications.length);
 	let currentMonth = $derived(monthlyTrend.months.at(-1) ?? '');
 	let currentMonthCount = $derived(monthlyTrend.series.reduce((sum, item) => sum + (item.data.at(-1) ?? 0), 0));
@@ -67,7 +69,7 @@
 </script>
 
 <svelte:head><title>数据统计 - 差旅管理</title></svelte:head>
-<div class="page-heading"><div><h1>数据统计</h1><p>从申请量、审批状态和费用趋势了解各部门出差情况。</p></div></div>
+<div class="page-heading"><div><h1>数据统计</h1><p>从申请量、审批状态和费用趋势了解各部门出差情况。</p></div><select class="range-select" aria-label="统计时间范围" bind:value={selectedRange}><option value="year">最近一年</option><option value="halfYear">最近半年</option><option value="quarter">最近三月</option><option value="currentYear">今年</option></select></div>
 {#if loading}<section class="panel loading">正在加载统计数据…</section>
 {:else if !isApprover}<section class="panel denied"><strong>数据统计仅对审批人开放</strong><span>请切换到李经理账号查看差旅统计。</span></section>
 {:else}<section class="metric-grid">
@@ -76,8 +78,8 @@
 	<div class="metric-card"><span>审批通过率</span><strong>{approvalRate}%</strong><small>仅统计已完成审批</small></div>
 	<div class="metric-card"><span>总预计费用</span><strong>¥ {totalCost.toLocaleString()}</strong><small>已提交申请预计费用</small></div>
 </section>
-<section class="panel trend-card"><div class="card-heading"><div><h2>部门月度出差趋势</h2><p>按出发日期所在月份统计，最近 12 个月</p></div><span>堆叠申请单量 · 不含草稿</span></div><EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势堆叠柱状图" /></section>
-<section class="panel cost-card"><div class="card-heading"><div><h2>月度预计费用</h2><p>按出发月份汇总所有已提交申请的预计费用</p></div><span>人民币</span></div><EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" /></section>
+<section class="panel trend-card"><div class="card-heading"><div><h2>部门月度出差趋势</h2><p>按出发日期所在月份统计，{selectedRange === 'currentYear' ? '今年' : selectedRange === 'halfYear' ? '最近 6 个月' : selectedRange === 'quarter' ? '最近 3 个月' : '最近 12 个月'}</p></div><span>堆叠申请单量 · 不含草稿</span></div><EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势堆叠柱状图" /></section>
+<section class="panel cost-card"><div class="card-heading"><div><h2>月度预计费用</h2><p>按出发月份汇总所选范围内已提交申请的预计费用</p></div><span>人民币</span></div><EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" /></section>
 <section class="stats-grid">
 	<div class="panel chart-card"><div class="card-heading"><h2>申请状态分布</h2><span>已提交申请</span></div><EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" /></div>
 	<div class="panel chart-card"><div class="card-heading"><h2>部门申请单量</h2><span>已提交申请</span></div><EChart option={departmentOption} height="280px" ariaLabel="部门申请单量柱状图" /></div>
@@ -86,6 +88,7 @@
 
 <style>
 	.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; } .metric-card { padding: 18px 20px; border: 1px solid #e8edf5; border-radius: 14px; background: linear-gradient(145deg, #fff, #f8faff); box-shadow: 0 8px 20px #203b6810; } .metric-card span, .metric-card small { display: block; color: #8a95a8; font-size: 12px; } .metric-card strong { display: block; margin: 8px 0 4px; color: #34415a; font-size: 25px; } .metric-card small { font-size: 11px; }
+	.range-select { min-width: 128px; height: 40px; padding: 0 12px; border: 1px solid #dfe5ee; border-radius: 8px; background: #fff; color: #44516a; outline: none; } .range-select:focus { border-color: #3975f6; box-shadow: 0 0 0 3px #3975f61c; }
 	.trend-card, .cost-card { margin-bottom: 18px; padding: 24px; } .cost-card { padding-bottom: 18px; } .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; } .chart-card { min-height: 340px; padding: 24px; } .card-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; } .card-heading h2, .insight h2 { margin: 0; font-size: 17px; } .card-heading p { margin: 7px 0 0; color: #9aa4b5; font-size: 12px; } .card-heading > span { color: #9aa4b5; font-size: 11px; white-space: nowrap; }
 	.insight { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 18px; align-items: center; padding: 22px 24px; } .insight > div { padding-left: 18px; border-left: 1px solid #edf0f5; } .insight span, .insight strong { display: block; } .insight span { color: #8a95a8; font-size: 12px; } .insight strong { margin-top: 8px; color: #34415a; font-size: 19px; }
 	.loading, .denied { min-height: 220px; display: grid; place-content: center; justify-items: center; gap: 8px; color: #8a95a8; } .denied strong { color: #44516a; font-size: 16px; }
