@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { createApplication, listApplications, listApplicationsPage } from '$lib/server/applicationRepository';
+import { createApplication, getApplicationsForUser, listApplicationsPage } from '$lib/server/applicationRepository';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
 import type { ApplicationStatus, TravelApplicationInput } from '$lib/types/application';
 import { getCurrentUser, hasRole } from '$lib/server/auth';
@@ -27,17 +27,13 @@ export function GET({ cookies, url }) {
 	const keyword = url.searchParams.get('keyword') ?? '';
 	const excludeDraft = hasRole(user, 'approver');
 	const applicantId = hasRole(user, 'approver') ? undefined : user.id;
+	const visibleApplications = getApplicationsForUser(user);
 
 	if (page || pageSize || keyword || status !== 'all') {
-		return json(listApplicationsPage({ page, pageSize, keyword, status, applicantId, excludeDraft }));
+		return json(listApplicationsPage({ page, pageSize, keyword, status, applicantId, excludeDraft, applications: visibleApplications }));
 	}
 
-	const data = listApplications().filter((application) => {
-		const matchesApplicant = !applicantId || application.applicant.id === applicantId;
-		const matchesDraft = !excludeDraft || application.status !== 'draft';
-		return matchesApplicant && matchesDraft;
-	});
-	return json({ data });
+	return json({ data: visibleApplications });
 }
 
 export async function POST({ request, cookies }) {

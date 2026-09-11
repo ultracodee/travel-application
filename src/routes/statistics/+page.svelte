@@ -2,45 +2,57 @@
 	import { onMount } from 'svelte';
 	import EChart from '$lib/components/EChart.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
-	import { APPLICATION_STATUS_LABEL, type TravelApplication } from '$lib/types/application';
-	import {
-		countByDepartmentMonthlyTrend,
-		countBySubmittedDepartment,
-		countBySubmittedStatus,
-		filterApplicationsByRange,
-		type StatisticsRange,
-		sumByMonth
-	} from '$lib/utils/applicationStatistics';
+	import type { TravelApplication } from '$lib/types/application';
+	import type { StatisticsRange } from '$lib/utils/applicationStatistics';
 	import { createCostOption, createDepartmentOption, createDepartmentTrendOption, createStatusOption } from '$lib/utils/statisticsOptions';
 	import { getAuthState, hasRole } from '$lib/client/auth';
 
-	let applications = $state<TravelApplication[]>([]);
 	let isApprover = $state(false);
 	let loading = $state(true);
 	let selectedRange = $state<StatisticsRange>('year');
-	let submittedApplications = $derived(filterApplicationsByRange(applications, new Date(), selectedRange));
-	let statusCounts = $derived(countBySubmittedStatus(submittedApplications));
-	let departmentCounts = $derived(countBySubmittedDepartment(submittedApplications));
-	let monthlyTrend = $derived(countByDepartmentMonthlyTrend(submittedApplications, new Date(), selectedRange));
-	let monthlyCost = $derived(sumByMonth(submittedApplications, new Date(), selectedRange));
-	let totalSubmitted = $derived(submittedApplications.length);
+	let submittedApplications = $state<TravelApplication[]>([]);
+	let statusCounts = $state({ pending: 0, approved: 0, rejected: 0 });
+	let departmentCounts = $state<Record<string, number>>({});
+	let monthlyTrend = $state({ months: [] as string[], series: [] as { department: string; data: number[] }[] });
+	let monthlyCost = $state({ months: [] as string[], data: [] as number[] });
+	let totalSubmitted = $state(0);
+	let totalCost = $state(0);
+	let completedCount = $state(0);
+	let approvalRate = $state(0);
 	let currentMonth = $derived(monthlyTrend.months.at(-1) ?? '');
 	let currentMonthCount = $derived(monthlyTrend.series.reduce((sum, item) => sum + (item.data.at(-1) ?? 0), 0));
-	let totalCost = $derived(submittedApplications.reduce((sum, item) => sum + item.estimatedCost, 0));
-	let completedCount = $derived(statusCounts.approved + statusCounts.rejected);
-	let approvalRate = $derived(completedCount ? Math.round((statusCounts.approved / completedCount) * 100) : 0);
 
 	let statusOption = $derived(createStatusOption(statusCounts));
 	let departmentOption = $derived(createDepartmentOption(departmentCounts));
 	let trendOption = $derived(createDepartmentTrendOption(monthlyTrend));
 	let costOption = $derived(createCostOption(monthlyCost));
 
+	async function loadStatistics() {
+		loading = true;
+		const response = await fetch(`/api/statistics?range=${selectedRange}`);
+		if (response.ok) {
+			const payload = (await response.json()).data;
+			submittedApplications = payload.applications;
+			statusCounts = payload.statusCounts;
+			departmentCounts = payload.departmentCounts;
+			monthlyTrend = payload.monthlyTrend;
+			monthlyCost = payload.monthlyCost;
+			totalSubmitted = payload.totalSubmitted;
+			totalCost = payload.totalCost;
+			completedCount = payload.completedCount;
+			approvalRate = payload.approvalRate;
+		}
+		loading = false;
+	}
+
 	onMount(async () => {
 		const auth = await getAuthState();
 		isApprover = hasRole(auth.data, 'approver');
-		const response = await fetch('/api/applications');
-		if (response.ok) applications = (await response.json()).data;
-		loading = false;
+		if (!isApprover) loading = false;
+	});
+
+	$effect(() => {
+		if (isApprover) void loadStatistics();
 	});
 </script>
 

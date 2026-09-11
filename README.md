@@ -122,7 +122,7 @@ npm run build
 - `Pagination`、`MetricCard` 组件及统计页页面级渲染；
 - 申请列表分页、筛选和权限范围。
 
-申请列表使用轻量服务端分页，支持页码、每页条数、关键字和状态筛选。接口返回 `data` 与 `pagination` 元信息，默认每页 10 条、单次最多 50 条。统计页通过独立的全量读取路径获取当前角色可见数据，不受列表分页上限影响。ECharts 仅在图表组件挂载到浏览器后动态加载，普通页面不会同步加载完整图表库。
+申请列表使用轻量服务端分页，支持页码、每页条数、关键字和状态筛选。接口返回 `data` 与 `pagination` 元信息，默认每页 10 条、单次最多 50 条。统计页通过独立的服务端统计接口获取聚合结果，不受列表分页上限影响；服务端统一执行角色数据范围、时间范围和草稿排除规则。ECharts 仅在图表组件挂载到浏览器后动态加载，普通页面不会同步加载完整图表库。
 
 ## 数据统计
 
@@ -191,3 +191,4 @@ npm run build
 - `PUT /api/applications/:id`：员工更新自己的草稿
 - `DELETE /api/applications/:id`：员工删除自己的草稿
 - `PATCH /api/applications/:id`：员工提交草稿；审批人通过或驳回申请
+- `GET /api/statistics?range=year|halfYear|quarter|currentYear`：审批人获取指定时间范围内的统计聚合结果

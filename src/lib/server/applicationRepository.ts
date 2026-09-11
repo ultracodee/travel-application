@@ -6,6 +6,7 @@ import type {
 	TravelApplication,
 	TravelApplicationInput
 } from '$lib/types/application';
+import type { User } from '$lib/types/user';
 
 export interface ApplicationListQuery {
 	page?: number;
@@ -14,6 +15,7 @@ export interface ApplicationListQuery {
 	status?: 'all' | ApplicationStatus;
 	applicantId?: string;
 	excludeDraft?: boolean;
+	applications?: TravelApplication[];
 }
 
 export interface PaginationMeta {
@@ -182,12 +184,21 @@ export function listApplications(): TravelApplication[] {
 	}));
 }
 
+/** 返回当前用户有权查看的申请，统一封装数据范围规则。 */
+export function getApplicationsForUser(user: User): TravelApplication[] {
+	const isApprover = user.roles.includes('approver');
+	return listApplications().filter((application) => {
+		if (isApprover) return application.status !== 'draft';
+		return application.applicant.id === user.id;
+	});
+}
+
 export function listApplicationsPage(query: ApplicationListQuery): PaginatedApplications {
 	const page = Math.max(1, query.page ?? 1);
 	const pageSize = Math.min(50, Math.max(1, query.pageSize ?? 10));
 	const keyword = query.keyword?.trim().toLowerCase() ?? '';
 
-	const filtered = listApplications().filter((application) => {
+	const filtered = (query.applications ?? listApplications()).filter((application) => {
 		const matchedApplicant = !query.applicantId || application.applicant.id === query.applicantId;
 		const matchedDraft = !query.excludeDraft || application.status !== 'draft';
 		const matchedStatus = !query.status || query.status === 'all' || application.status === query.status;
