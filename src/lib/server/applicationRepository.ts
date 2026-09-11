@@ -7,6 +7,27 @@ import type {
 	TravelApplicationInput
 } from '$lib/types/application';
 
+export interface ApplicationListQuery {
+	page?: number;
+	pageSize?: number;
+	keyword?: string;
+	status?: 'all' | ApplicationStatus;
+	applicantId?: string;
+	excludeDraft?: boolean;
+}
+
+export interface PaginationMeta {
+	page: number;
+	pageSize: number;
+	total: number;
+	totalPages: number;
+}
+
+export interface PaginatedApplications {
+	data: TravelApplication[];
+	pagination: PaginationMeta;
+}
+
 export const approver: Applicant = {
 	id: 'U002',
 	name: '李经理',
@@ -159,6 +180,37 @@ export function listApplications(): TravelApplication[] {
 		applicant: { ...application.applicant },
 		approvalRecords: application.approvalRecords.map((record) => ({ ...record, approver: { ...record.approver } }))
 	}));
+}
+
+export function listApplicationsPage(query: ApplicationListQuery): PaginatedApplications {
+	const page = Math.max(1, query.page ?? 1);
+	const pageSize = Math.min(50, Math.max(1, query.pageSize ?? 10));
+	const keyword = query.keyword?.trim().toLowerCase() ?? '';
+
+	const filtered = listApplications().filter((application) => {
+		const matchedApplicant = !query.applicantId || application.applicant.id === query.applicantId;
+		const matchedDraft = !query.excludeDraft || application.status !== 'draft';
+		const matchedStatus = !query.status || query.status === 'all' || application.status === query.status;
+		const searchableText = `${application.id} ${application.applicant.name} ${application.applicant.department} ${application.from} ${application.to}`.toLowerCase();
+		const matchedKeyword = !keyword || searchableText.includes(keyword);
+
+		return matchedApplicant && matchedDraft && matchedStatus && matchedKeyword;
+	});
+
+	const total = filtered.length;
+	const totalPages = Math.max(1, Math.ceil(total / pageSize));
+	const safePage = Math.min(page, totalPages);
+	const start = (safePage - 1) * pageSize;
+
+	return {
+		data: filtered.slice(start, start + pageSize),
+		pagination: {
+			page: safePage,
+			pageSize,
+			total,
+			totalPages
+		}
+	};
 }
 
 export function findApplication(id: string): TravelApplication | undefined {

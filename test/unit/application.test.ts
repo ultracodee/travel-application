@@ -10,7 +10,7 @@ import {
 } from '$lib/utils/applicationStatistics';
 import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
-import { changeApplicationStatus, createApplication } from '$lib/server/applicationRepository';
+import { changeApplicationStatus, createApplication, listApplicationsPage } from '$lib/server/applicationRepository';
 
 const application: TravelApplication = {
 	id: 'TRV-TEST-001',
@@ -152,5 +152,16 @@ describe('状态流转和统计', () => {
 		const approved = changeApplicationStatus(created.id, 'approved', 'U002', '同意出差');
 		expect(approved?.status).toBe('approved');
 		expect(approved?.approvalRecords.at(-1)?.comment).toBe('同意出差');
+	});
+
+	it('支持按页返回申请并应用筛选条件', () => {
+		const result = listApplicationsPage({ page: 2, pageSize: 5, excludeDraft: true, keyword: '客户' });
+		expect(result.pagination.page).toBe(2);
+		expect(result.pagination.pageSize).toBe(5);
+		expect(result.pagination.total).toBeGreaterThan(5);
+		expect(result.data.length).toBeGreaterThan(0);
+		expect(result.data.length).toBeLessThanOrEqual(5);
+		expect(result.data.every((item) => item.status !== 'draft')).toBe(true);
+		expect(result.data.every((item) => `${item.id}${item.applicant.name}${item.from}${item.to}${item.reason}`.includes('客户'))).toBe(true);
 	});
 });

@@ -1,16 +1,38 @@
 import { json } from '@sveltejs/kit';
-import { createApplication, listApplications } from '$lib/server/applicationRepository';
+import { createApplication, listApplicationsPage } from '$lib/server/applicationRepository';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
-import type { TravelApplicationInput } from '$lib/types/application';
+import type { ApplicationStatus, TravelApplicationInput } from '$lib/types/application';
 import { getCurrentUser, hasRole } from '$lib/server/auth';
 import { approver } from '$lib/server/applicationRepository';
 
-export function GET({ cookies }) {
+const statusValues: Array<'all' | ApplicationStatus> = ['all', 'draft', 'pending', 'approved', 'rejected'];
+
+function parsePositiveInt(value: string | null): number | undefined {
+	if (!value) return undefined;
+	const parsed = Number.parseInt(value, 10);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function parseStatus(value: string | null): 'all' | ApplicationStatus {
+	return statusValues.includes(value as 'all' | ApplicationStatus) ? (value as 'all' | ApplicationStatus) : 'all';
+}
+
+export function GET({ cookies, url }) {
 	const user = getCurrentUser(cookies);
 	if (!user) return json({ message: '请先登录' }, { status: 401 });
-	const data = hasRole(user, 'approver')
-		? listApplications().filter((application) => application.status !== 'draft')
-		: listApplications().filter((application) => application.applicant.id === user.id);
+
+	const page = parsePositiveInt(url.searchParams.get('page'));
+	const pageSize = parsePositiveInt(url.searchParams.get('pageSize'));
+	const status = parseStatus(url.searchParams.get('status'));
+	const keyword = url.searchParams.get('keyword') ?? '';
+	const excludeDraft = hasRole(user, 'approver');
+	const applicantId = hasRole(user, 'approver') ? undefined : user.id;
+
+	if (page || pageSize || keyword || status !== 'all') {
+		return json(listApplicationsPage({ page, pageSize, keyword, status, applicantId, excludeDraft }));
+	}
+
+	const data = listApplicationsPage({ applicantId, excludeDraft, pageSize: Number.MAX_SAFE_INTEGER }).data;
 	return json({ data });
 }
 

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { APPLICATION_STATUS_LABEL, TRANSPORT_LABEL, type ApplicationStatus, type TravelApplication } from '$lib/types/application';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import Pagination from '$lib/components/Pagination.svelte';
 	import { getAuthState, hasRole } from '$lib/client/auth';
 
 	let applications = $state<TravelApplication[]>([]);
@@ -10,31 +11,58 @@
 	let status = $state<'all' | ApplicationStatus>('all');
 	let isApprover = $state(false);
 	let deletingId = $state('');
+	let page = $state(1);
+	let pageSize = $state(10);
+	let total = $state(0);
+	let totalPages = $state(1);
+	let requestId = 0;
 
 	onMount(async () => {
-		try {
-			const auth = await getAuthState();
-			isApprover = hasRole(auth.data, 'approver');
-			const response = await fetch('/api/applications');
-			if (response.ok) applications = (await response.json()).data;
-		} finally {
-			loading = false;
-		}
+		const auth = await getAuthState();
+		isApprover = hasRole(auth.data, 'approver');
+		await loadApplications();
 	});
 
-	let filteredApplications = $derived(
-		applications.filter((item) => {
-			const text = `${item.id} ${item.applicant.name} ${item.from} ${item.to}`.toLowerCase();
-			return (status === 'all' || item.status === status) && text.includes(keyword.trim().toLowerCase());
-		})
-	);
+	async function loadApplications() {
+		const currentRequest = ++requestId;
+		loading = true;
+		const params = new URLSearchParams({
+			page: String(page),
+			pageSize: String(pageSize),
+			status,
+			keyword
+		});
+		try {
+			const response = await fetch(`/api/applications?${params}`);
+			if (!response.ok) return;
+			const result = await response.json();
+			if (currentRequest !== requestId) return;
+			applications = result.data;
+			total = result.pagination?.total ?? result.data.length;
+			totalPages = result.pagination?.totalPages ?? 1;
+			page = result.pagination?.page ?? page;
+		} finally {
+			if (currentRequest === requestId) loading = false;
+		}
+	}
+
+	function applyFilters() {
+		page = 1;
+		loadApplications();
+	}
+
+	function changePage(nextPage: number) {
+		if (nextPage < 1 || nextPage > totalPages || nextPage === page) return;
+		page = nextPage;
+		loadApplications();
+	}
 
 	async function deleteDraft(id: string) {
 		if (!confirm('确定删除这条草稿申请吗？')) return;
 		deletingId = id;
 		try {
 			const response = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
-			if (response.ok) applications = applications.filter((item) => item.id !== id);
+			if (response.ok) await loadApplications();
 		} finally {
 			deletingId = '';
 		}
@@ -50,22 +78,23 @@
 
 <section class="panel list-panel">
 	<div class="toolbar">
-		<div class="search-wrap"><span>⌕</span><input aria-label="搜索申请" placeholder="搜索编号、申请人或目的地" bind:value={keyword} /></div>
-		<select aria-label="按状态筛选" bind:value={status}>
+		<div class="search-wrap"><span>⌕</span><input aria-label="搜索申请" placeholder="搜索编号、申请人或目的地" bind:value={keyword} onkeydown={(event) => event.key === 'Enter' && applyFilters()} /></div>
+		<select aria-label="按状态筛选" bind:value={status} onchange={applyFilters}>
 			<option value="all">全部状态</option>
-			{#each Object.entries(APPLICATION_STATUS_LABEL) as [key, label]}<option value={key}>{label}</option>{/each}
+			{#each Object.entries(APPLICATION_STATUS_LABEL).filter(([key]) => !isApprover || key !== 'draft') as [key, label]}<option value={key}>{label}</option>{/each}
 		</select>
+		<button class="filter-button" type="button" onclick={applyFilters}>搜索</button>
 	</div>
 	{#if loading}
 		<div class="empty">正在加载申请记录…</div>
-	{:else if filteredApplications.length === 0}
+	{:else if applications.length === 0}
 		<div class="empty"><div class="empty-icon">▤</div><strong>暂无匹配申请</strong><span>可以新建一条差旅申请。</span></div>
 	{:else}
 		<div class="table-wrap">
 			<table>
 				<thead><tr><th>申请编号</th><th>申请人</th><th>行程</th><th>出行日期</th><th>交通方式</th><th>预计费用</th><th>状态</th><th></th></tr></thead>
 				<tbody>
-					{#each filteredApplications as item}
+					{#each applications as item}
 						<tr>
 							<td><a class="id-link" href={`/applications/${item.id}`}>{item.id}</a></td>
 							<td><strong>{item.applicant.name}</strong><small>{item.applicant.department}</small></td>
@@ -89,6 +118,7 @@
 				</tbody>
 			</table>
 		</div>
+		<Pagination {page} {pageSize} {total} {totalPages} onPageChange={changePage} />
 	{/if}
 </section>
 
@@ -99,7 +129,7 @@
 	.search-wrap span { position: absolute; left: 12px; top: 0; color: #8995a8; font-size: 27px; }
 	input, select { height: 40px; border: 1px solid #dfe5ee; border-radius: 8px; background: white; color: #33405a; outline: none; }
 	.search-wrap input { width: 100%; padding: 0 12px 0 36px; }
-	select { min-width: 130px; padding: 0 10px; }
+	select { min-width: 130px; padding: 0 10px; } .filter-button { height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: #3975f6; color: white; font-weight: 650; cursor: pointer; }
 	input:focus, select:focus { border-color: #3975f6; box-shadow: 0 0 0 3px #3975f61c; }
 	.table-wrap { overflow-x: auto; }
 	table { width: 100%; border-collapse: collapse; min-width: 920px; }
