@@ -24,7 +24,12 @@
 		let disposed = false;
 
 		void (async () => {
-			const [echarts, { BarChart, LineChart, PieChart }, { GridComponent, LegendComponent, TitleComponent, TooltipComponent }, { CanvasRenderer }] = await Promise.all([
+			const [
+				echarts,
+				{ BarChart, LineChart, PieChart },
+				{ GridComponent, LegendComponent, TitleComponent, TooltipComponent },
+				{ CanvasRenderer }
+			] = await Promise.all([
 				import('echarts/core'),
 				import('echarts/charts'),
 				import('echarts/components'),
@@ -32,7 +37,16 @@
 			]);
 			if (!container || disposed) return;
 
-			echarts.use([BarChart, LineChart, PieChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer]);
+			echarts.use([
+				BarChart,
+				LineChart,
+				PieChart,
+				GridComponent,
+				LegendComponent,
+				TitleComponent,
+				TooltipComponent,
+				CanvasRenderer
+			]);
 			chart = echarts.init(container);
 			chart.setOption(option, true);
 
@@ -49,13 +63,7 @@
 	});
 </script>
 
-<div
-	bind:this={container}
-	class="echart"
-	style:height
-	role="img"
-	aria-label={ariaLabel}
-></div>
+<div bind:this={container} class="echart" style:height role="img" aria-label={ariaLabel}></div>
 
 <style>
 	.echart {

@@ -30,7 +30,17 @@ export function GET({ cookies, url }) {
 	const visibleApplications = getApplicationsForUser(user);
 
 	if (page || pageSize || keyword || status !== 'all') {
-		return json(listApplicationsPage({ page, pageSize, keyword, status, applicantId, excludeDraft, applications: visibleApplications }));
+		return json(
+			listApplicationsPage({
+				page,
+				pageSize,
+				keyword,
+				status,
+				applicantId,
+				excludeDraft,
+				applications: visibleApplications
+			})
+		);
 	}
 
 	return json({ data: visibleApplications });

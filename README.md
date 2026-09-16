@@ -15,14 +15,14 @@
 
 ## 环境与技术栈
 
-| 类别 | 采用方案 | 用途 |
-| --- | --- | --- |
-| 运行环境 | Node.js 20+、npm 10+ | 本地开发与脚本执行 |
-| 前端 / BFF | SvelteKit 2、Svelte 5 | 页面路由、服务端 API |
-| 语言 | TypeScript | 类型约束 |
-| 样式 | Tailwind CSS 4 + Scoped CSS | 全局基础样式和页面样式 |
-| 测试 | Vitest、vitest-browser-svelte、Playwright Chromium | 逻辑单测和组件浏览器测试 |
-| 数据存储 | 进程内存仓储 | 演示数据，不依赖数据库 |
+| 类别       | 采用方案                                           | 用途                     |
+| ---------- | -------------------------------------------------- | ------------------------ |
+| 运行环境   | Node.js 20+、npm 10+                               | 本地开发与脚本执行       |
+| 前端 / BFF | SvelteKit 2、Svelte 5                              | 页面路由、服务端 API     |
+| 语言       | TypeScript                                         | 类型约束                 |
+| 样式       | Tailwind CSS 4 + Scoped CSS                        | 全局基础样式和页面样式   |
+| 测试       | Vitest、vitest-browser-svelte、Playwright Chromium | 逻辑单测和组件浏览器测试 |
+| 数据存储   | 进程内存仓储                                       | 演示数据，不依赖数据库   |
 
 ## 启动
 
@@ -99,6 +99,12 @@ npx playwright install chromium
 # TypeScript / Svelte 静态检查
 npm run check
 
+# ESLint 代码规范检查
+npm run lint
+
+# Prettier 格式检查
+npm run format:check
+
 # 业务规则与工具函数单元测试
 npm run test:unit -- --run
 
@@ -107,6 +113,9 @@ npm run test:component -- --run
 
 # 一键执行全部测试
 npm test
+
+# 单元测试覆盖率报告
+npm run test:coverage
 
 # 生产构建
 npm run build

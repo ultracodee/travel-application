@@ -32,9 +32,25 @@ const application: TravelApplication = {
 	updatedAt: '2026-09-10T00:00:00.000Z'
 };
 
+function offsetDate(days: number) {
+	const date = new Date();
+	date.setDate(date.getDate() + days);
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 const input = () => {
-	const { id, status, approvalRecords, createdAt, updatedAt, ...value } = application;
-	return value;
+	return {
+		applicant: application.applicant,
+		approverId: application.approverId,
+		from: application.from,
+		to: application.to,
+		startDate: offsetDate(1),
+		endDate: offsetDate(3),
+		reason: application.reason,
+		transport: application.transport,
+		estimatedCost: application.estimatedCost,
+		remark: application.remark
+	};
 };
 
 describe('差旅申请校验', () => {
@@ -45,8 +61,8 @@ describe('差旅申请校验', () => {
 			...input(),
 			from: '',
 			to: '',
-			startDate: '2026-09-15',
-			endDate: '2026-09-14',
+			startDate: offsetDate(2),
+			endDate: offsetDate(1),
 			reason: '',
 			estimatedCost: -1
 		});
@@ -69,8 +85,18 @@ describe('状态流转和统计', () => {
 		const applications = [
 			application,
 			{ ...application, id: 'TRV-TEST-002', status: 'approved' as const },
-			{ ...application, id: 'TRV-TEST-003', applicant: { ...application.applicant, department: '销售部' }, status: 'rejected' as const },
-			{ ...application, id: 'TRV-TEST-004', applicant: { ...application.applicant, department: '销售部' }, status: 'draft' as const }
+			{
+				...application,
+				id: 'TRV-TEST-003',
+				applicant: { ...application.applicant, department: '销售部' },
+				status: 'rejected' as const
+			},
+			{
+				...application,
+				id: 'TRV-TEST-004',
+				applicant: { ...application.applicant, department: '销售部' },
+				status: 'draft' as const
+			}
 		];
 		expect(countByStatus(applications)).toEqual({ draft: 1, pending: 1, approved: 1, rejected: 1 });
 		expect(countBySubmittedStatus(applications)).toEqual({ pending: 1, approved: 1, rejected: 1 });
@@ -81,9 +107,25 @@ describe('状态流转和统计', () => {
 	it('按出发日期归属最近 12 个月的部门趋势并排除草稿', () => {
 		const applications = [
 			application,
-			{ ...application, id: 'TRV-TEST-005', startDate: '2026-08-20', applicant: { ...application.applicant, department: '市场部' } },
-			{ ...application, id: 'TRV-TEST-006', startDate: '2026-09-20', applicant: { ...application.applicant, department: '研发部' } },
-			{ ...application, id: 'TRV-TEST-007', startDate: '2026-09-21', status: 'draft' as const, applicant: { ...application.applicant, department: '客户成功部' } },
+			{
+				...application,
+				id: 'TRV-TEST-005',
+				startDate: '2026-08-20',
+				applicant: { ...application.applicant, department: '市场部' }
+			},
+			{
+				...application,
+				id: 'TRV-TEST-006',
+				startDate: '2026-09-20',
+				applicant: { ...application.applicant, department: '研发部' }
+			},
+			{
+				...application,
+				id: 'TRV-TEST-007',
+				startDate: '2026-09-21',
+				status: 'draft' as const,
+				applicant: { ...application.applicant, department: '客户成功部' }
+			},
 			{ ...application, id: 'TRV-TEST-008', startDate: '2025-09-20' }
 		];
 		expect(getRecentMonths('2026-09-10')).toEqual([
@@ -204,6 +246,10 @@ describe('状态流转和统计', () => {
 		expect(result.data.length).toBeGreaterThan(0);
 		expect(result.data.length).toBeLessThanOrEqual(5);
 		expect(result.data.every((item) => item.status !== 'draft')).toBe(true);
-		expect(result.data.every((item) => `${item.id}${item.applicant.name}${item.from}${item.to}${item.reason}`.includes('客户'))).toBe(true);
+		expect(
+			result.data.every((item) =>
+				`${item.id}${item.applicant.name}${item.from}${item.to}${item.reason}`.includes('客户')
+			)
+		).toBe(true);
 	});
 });

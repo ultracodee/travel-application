@@ -37,6 +37,7 @@ pnpm-debug.log*
 .eslintcache
 .stylelintcache
 .cache
+.npm-cache
 
 # Vite
 vite.config.js.timestamp-*

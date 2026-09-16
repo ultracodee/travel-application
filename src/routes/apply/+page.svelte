@@ -1,9 +1,5 @@
 <script lang="ts">
-	import {
-		TRANSPORT_LABEL,
-		type TransportType,
-		type TravelApplicationInput
-	} from '$lib/types/application';
+	import { TRANSPORT_LABEL, type TransportType, type TravelApplicationInput } from '$lib/types/application';
 	import { validateTravelApplication, type ValidationErrors } from '$lib/utils/applicationValidation';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -66,15 +62,7 @@
 		}
 	});
 
-	type EditableField =
-		| 'from'
-		| 'to'
-		| 'startDate'
-		| 'endDate'
-		| 'reason'
-		| 'transport'
-		| 'estimatedCost'
-		| 'remark';
+	type EditableField = 'from' | 'to' | 'startDate' | 'endDate' | 'reason' | 'transport' | 'estimatedCost' | 'remark';
 
 	function updateField(field: EditableField, value: string) {
 		form = {
@@ -228,186 +216,192 @@
 </div>
 
 {#if !canApply}
-	<section class="panel denied"><strong>专职审批角色无需发起申请</strong><span>请使用员工账号提交差旅申请。</span></section>
+	<section class="panel denied">
+		<strong>专职审批角色无需发起申请</strong><span>请使用员工账号提交差旅申请。</span>
+	</section>
 {:else}
-{#if !previewReady}
-<form class="application-form" onsubmit={(event) => { event.preventDefault(); preparePreview(); }}>
-	<section class="panel form-panel">
-		<div class="section-heading">
-			<div>
-				<h2>申请人信息</h2>
-				<p>当前登录用户信息已自动带入。</p>
-			</div>
-			<span class="required-tip">* 为必填项</span>
-		</div>
-		<div class="form-grid applicant-grid">
-			<div class="field">
-				<label for="applicant-name">申请人 <span>*</span></label>
-				<input id="applicant-name" value={form.applicant.name} readonly />
-				{#if errors.applicant}<small class="error">{errors.applicant}</small>{/if}
-			</div>
-			<div class="field">
-				<label for="department">所属部门 <span>*</span></label>
-				<input id="department" value={form.applicant.department} readonly />
-			</div>
-			<div class="field">
-				<label for="position">职位</label>
-				<input id="position" value={form.applicant.position ?? ''} readonly />
-			</div>
-		</div>
-	</section>
-
-	<section class="panel form-panel">
-		<div class="section-heading">
-			<div>
-				<h2>出行信息</h2>
-				<p>请填写本次差旅的行程与时间安排。</p>
-			</div>
-		</div>
-		<div class="form-grid">
-			<div class="field">
-				<label for="from">出发地 <span>*</span></label>
-				<input
-					id="from"
-					placeholder="例如：上海"
-					value={form.from}
-					oninput={(event) => updateField('from', event.currentTarget.value)}
-				/>
-				{#if errors.from}<small class="error">{errors.from}</small>{/if}
-			</div>
-			<div class="field">
-				<label for="to">目的地 <span>*</span></label>
-				<input
-					id="to"
-					placeholder="例如：北京"
-					value={form.to}
-					oninput={(event) => updateField('to', event.currentTarget.value)}
-				/>
-				{#if errors.to}<small class="error">{errors.to}</small>{/if}
-			</div>
-			<div class="field">
-				<label for="start-date">出发日期 <span>*</span></label>
-				<input
-					id="start-date"
-					type="date"
-					min={today}
-					value={form.startDate}
-					onchange={(event) => updateField('startDate', event.currentTarget.value)}
-				/>
-				{#if errors.startDate}<small class="error">{errors.startDate}</small>{/if}
-			</div>
-			<div class="field">
-				<label for="end-date">返回日期 <span>*</span></label>
-				<input
-					id="end-date"
-					type="date"
-					min={form.startDate || today}
-					value={form.endDate}
-					onchange={(event) => updateField('endDate', event.currentTarget.value)}
-				/>
-				{#if errors.endDate}<small class="error">{errors.endDate}</small>{/if}
-				{#if errors.dateRange}<small class="error">{errors.dateRange}</small>{/if}
-			</div>
-			<div class="field">
-				<label for="transport">交通方式 <span>*</span></label>
-				<select
-					id="transport"
-					value={form.transport}
-					onchange={(event) => updateField('transport', event.currentTarget.value)}
-				>
-					{#each transportOptions as option}
-						<option value={option}>{TRANSPORT_LABEL[option]}</option>
-					{/each}
-				</select>
-			</div>
-			<div class="field">
-				<label for="estimated-cost">预计费用 <span>*</span></label>
-				<div class="input-with-suffix">
-					<input
-						id="estimated-cost"
-						type="number"
-						min="0"
-						step="0.01"
-						placeholder="0.00"
-						value={form.estimatedCost || ''}
-						oninput={(event) => updateField('estimatedCost', event.currentTarget.value)}
-					/>
-					<span>元</span>
-				</div>
-				{#if errors.estimatedCost}<small class="error">{errors.estimatedCost}</small>{/if}
-			</div>
-		</div>
-		<div class="field full-width">
-			<label for="reason">出行事由 <span>*</span></label>
-			<textarea
-				id="reason"
-				rows="4"
-				maxlength="500"
-				placeholder="请说明本次出差的工作目的、客户或项目背景"
-				value={form.reason}
-				oninput={(event) => updateField('reason', event.currentTarget.value)}
-			></textarea>
-			<div class="field-footer">
-				{#if errors.reason}<small class="error">{errors.reason}</small>{:else}<span></span>{/if}
-				<span class="counter">{form.reason.length}/500</span>
-			</div>
-		</div>
-		<div class="field full-width">
-			<label for="remark">备注</label>
-			<textarea
-				id="remark"
-				rows="3"
-				placeholder="其他需要说明的信息（选填）"
-				value={form.remark}
-				oninput={(event) => updateField('remark', event.currentTarget.value)}
-			></textarea>
-		</div>
-	</section>
-
-	{#if notice}
-		<div
-			class:success-notice={noticeTone === 'success'}
-			class:info-notice={noticeTone === 'info'}
-			class="notice"
-			role="status"
+	{#if !previewReady}
+		<form
+			class="application-form"
+			onsubmit={(event) => {
+				event.preventDefault();
+				preparePreview();
+			}}
 		>
-			<span>{noticeTone === 'success' ? '✓' : '!'}</span>
-			{notice}
-			{#if previewReady}<span class="preview-hint">（预览入口已准备）</span>{/if}
-		</div>
-	{/if}
+			<section class="panel form-panel">
+				<div class="section-heading">
+					<div>
+						<h2>申请人信息</h2>
+						<p>当前登录用户信息已自动带入。</p>
+					</div>
+					<span class="required-tip">* 为必填项</span>
+				</div>
+				<div class="form-grid applicant-grid">
+					<div class="field">
+						<label for="applicant-name">申请人 <span>*</span></label>
+						<input id="applicant-name" value={form.applicant.name} readonly />
+						{#if errors.applicant}<small class="error">{errors.applicant}</small>{/if}
+					</div>
+					<div class="field">
+						<label for="department">所属部门 <span>*</span></label>
+						<input id="department" value={form.applicant.department} readonly />
+					</div>
+					<div class="field">
+						<label for="position">职位</label>
+						<input id="position" value={form.applicant.position ?? ''} readonly />
+					</div>
+				</div>
+			</section>
 
-	<div class="form-actions">
-		<button type="button" class="secondary-button" onclick={saveDraft}>保存草稿</button>
-		<button type="submit" class="primary-button">下一步：预览 <span aria-hidden="true">→</span></button>
-	</div>
-</form>
-{:else}
-<section class="panel preview-panel">
-	<div class="preview-heading">
-		<div>
-			<h2>申请预览</h2>
-			<p>请确认以下信息无误后提交审批。</p>
-		</div>
-		<span class="preview-badge">待提交</span>
-	</div>
-	<div class="preview-grid">
-		<div><span>申请人</span><strong>{form.applicant.name} · {form.applicant.department}</strong></div>
-		<div><span>出行路线</span><strong>{form.from} → {form.to}</strong></div>
-		<div><span>出行日期</span><strong>{form.startDate} 至 {form.endDate}</strong></div>
-		<div><span>交通方式</span><strong>{TRANSPORT_LABEL[form.transport]}</strong></div>
-		<div><span>预计费用</span><strong>¥ {form.estimatedCost.toFixed(2)}</strong></div>
-		<div class="preview-full"><span>出行事由</span><strong>{form.reason}</strong></div>
-		{#if form.remark}<div class="preview-full"><span>备注</span><strong>{form.remark}</strong></div>{/if}
-	</div>
-	<div class="preview-actions">
-		<button type="button" class="secondary-button" onclick={backToEdit}>返回修改</button>
-		<button type="button" class="primary-button" disabled={submitting} onclick={submitApplication}>
-			{submitting ? '提交中…' : '确认提交'} <span aria-hidden="true">→</span>
-		</button>
-	</div>
-</section>
-{/if}
+			<section class="panel form-panel">
+				<div class="section-heading">
+					<div>
+						<h2>出行信息</h2>
+						<p>请填写本次差旅的行程与时间安排。</p>
+					</div>
+				</div>
+				<div class="form-grid">
+					<div class="field">
+						<label for="from">出发地 <span>*</span></label>
+						<input
+							id="from"
+							placeholder="例如：上海"
+							value={form.from}
+							oninput={(event) => updateField('from', event.currentTarget.value)}
+						/>
+						{#if errors.from}<small class="error">{errors.from}</small>{/if}
+					</div>
+					<div class="field">
+						<label for="to">目的地 <span>*</span></label>
+						<input
+							id="to"
+							placeholder="例如：北京"
+							value={form.to}
+							oninput={(event) => updateField('to', event.currentTarget.value)}
+						/>
+						{#if errors.to}<small class="error">{errors.to}</small>{/if}
+					</div>
+					<div class="field">
+						<label for="start-date">出发日期 <span>*</span></label>
+						<input
+							id="start-date"
+							type="date"
+							min={today}
+							value={form.startDate}
+							onchange={(event) => updateField('startDate', event.currentTarget.value)}
+						/>
+						{#if errors.startDate}<small class="error">{errors.startDate}</small>{/if}
+					</div>
+					<div class="field">
+						<label for="end-date">返回日期 <span>*</span></label>
+						<input
+							id="end-date"
+							type="date"
+							min={form.startDate || today}
+							value={form.endDate}
+							onchange={(event) => updateField('endDate', event.currentTarget.value)}
+						/>
+						{#if errors.endDate}<small class="error">{errors.endDate}</small>{/if}
+						{#if errors.dateRange}<small class="error">{errors.dateRange}</small>{/if}
+					</div>
+					<div class="field">
+						<label for="transport">交通方式 <span>*</span></label>
+						<select
+							id="transport"
+							value={form.transport}
+							onchange={(event) => updateField('transport', event.currentTarget.value)}
+						>
+							{#each transportOptions as option (option)}
+								<option value={option}>{TRANSPORT_LABEL[option]}</option>
+							{/each}
+						</select>
+					</div>
+					<div class="field">
+						<label for="estimated-cost">预计费用 <span>*</span></label>
+						<div class="input-with-suffix">
+							<input
+								id="estimated-cost"
+								type="number"
+								min="0"
+								step="0.01"
+								placeholder="0.00"
+								value={form.estimatedCost || ''}
+								oninput={(event) => updateField('estimatedCost', event.currentTarget.value)}
+							/>
+							<span>元</span>
+						</div>
+						{#if errors.estimatedCost}<small class="error">{errors.estimatedCost}</small>{/if}
+					</div>
+				</div>
+				<div class="field full-width">
+					<label for="reason">出行事由 <span>*</span></label>
+					<textarea
+						id="reason"
+						rows="4"
+						maxlength="500"
+						placeholder="请说明本次出差的工作目的、客户或项目背景"
+						value={form.reason}
+						oninput={(event) => updateField('reason', event.currentTarget.value)}></textarea>
+					<div class="field-footer">
+						{#if errors.reason}<small class="error">{errors.reason}</small>{:else}<span></span>{/if}
+						<span class="counter">{form.reason.length}/500</span>
+					</div>
+				</div>
+				<div class="field full-width">
+					<label for="remark">备注</label>
+					<textarea
+						id="remark"
+						rows="3"
+						placeholder="其他需要说明的信息（选填）"
+						value={form.remark}
+						oninput={(event) => updateField('remark', event.currentTarget.value)}></textarea>
+				</div>
+			</section>
+
+			{#if notice}
+				<div
+					class:success-notice={noticeTone === 'success'}
+					class:info-notice={noticeTone === 'info'}
+					class="notice"
+					role="status"
+				>
+					<span>{noticeTone === 'success' ? '✓' : '!'}</span>
+					{notice}
+					{#if previewReady}<span class="preview-hint">（预览入口已准备）</span>{/if}
+				</div>
+			{/if}
+
+			<div class="form-actions">
+				<button type="button" class="secondary-button" onclick={saveDraft}>保存草稿</button>
+				<button type="submit" class="primary-button">下一步：预览 <span aria-hidden="true">→</span></button>
+			</div>
+		</form>
+	{:else}
+		<section class="panel preview-panel">
+			<div class="preview-heading">
+				<div>
+					<h2>申请预览</h2>
+					<p>请确认以下信息无误后提交审批。</p>
+				</div>
+				<span class="preview-badge">待提交</span>
+			</div>
+			<div class="preview-grid">
+				<div><span>申请人</span><strong>{form.applicant.name} · {form.applicant.department}</strong></div>
+				<div><span>出行路线</span><strong>{form.from} → {form.to}</strong></div>
+				<div><span>出行日期</span><strong>{form.startDate} 至 {form.endDate}</strong></div>
+				<div><span>交通方式</span><strong>{TRANSPORT_LABEL[form.transport]}</strong></div>
+				<div><span>预计费用</span><strong>¥ {form.estimatedCost.toFixed(2)}</strong></div>
+				<div class="preview-full"><span>出行事由</span><strong>{form.reason}</strong></div>
+				{#if form.remark}<div class="preview-full"><span>备注</span><strong>{form.remark}</strong></div>{/if}
+			</div>
+			<div class="preview-actions">
+				<button type="button" class="secondary-button" onclick={backToEdit}>返回修改</button>
+				<button type="button" class="primary-button" disabled={submitting} onclick={submitApplication}>
+					{submitting ? '提交中…' : '确认提交'} <span aria-hidden="true">→</span>
+				</button>
+			</div>
+		</section>
+	{/if}
 {/if}
 
 <style>
@@ -599,19 +593,80 @@
 		gap: 12px;
 		padding-bottom: 12px;
 	}
-	.preview-panel { padding: 28px; }
-	.denied { min-height: 220px; display: grid; place-content: center; justify-items: center; gap: 8px; color: #8a95a8; } .denied strong { color: #44516a; font-size: 16px; }
-	.preview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
-	.preview-heading h2 { margin: 0; font-size: 19px; }
-	.preview-heading p { margin: 6px 0 0; color: #8a95a8; font-size: 13px; }
-	.preview-badge { padding: 5px 10px; border-radius: 999px; color: #8b671b; background: #fff5d8; font-size: 12px; font-weight: 650; }
-	.preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid #edf0f5; }
-	.preview-grid > div { display: grid; gap: 7px; padding: 17px 4px; border-bottom: 1px solid #edf0f5; }
-	.preview-grid span { color: #8a95a8; font-size: 12px; }
-	.preview-grid strong { color: #29354c; font-size: 14px; font-weight: 600; line-height: 1.6; }
-	.preview-full { grid-column: 1 / -1; }
-	.preview-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
-	button:disabled { cursor: wait; opacity: .65; }
+	.preview-panel {
+		padding: 28px;
+	}
+	.denied {
+		min-height: 220px;
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: 8px;
+		color: #8a95a8;
+	}
+	.denied strong {
+		color: #44516a;
+		font-size: 16px;
+	}
+	.preview-heading {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 16px;
+		margin-bottom: 24px;
+	}
+	.preview-heading h2 {
+		margin: 0;
+		font-size: 19px;
+	}
+	.preview-heading p {
+		margin: 6px 0 0;
+		color: #8a95a8;
+		font-size: 13px;
+	}
+	.preview-badge {
+		padding: 5px 10px;
+		border-radius: 999px;
+		color: #8b671b;
+		background: #fff5d8;
+		font-size: 12px;
+		font-weight: 650;
+	}
+	.preview-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0;
+		border-top: 1px solid #edf0f5;
+	}
+	.preview-grid > div {
+		display: grid;
+		gap: 7px;
+		padding: 17px 4px;
+		border-bottom: 1px solid #edf0f5;
+	}
+	.preview-grid span {
+		color: #8a95a8;
+		font-size: 12px;
+	}
+	.preview-grid strong {
+		color: #29354c;
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 1.6;
+	}
+	.preview-full {
+		grid-column: 1 / -1;
+	}
+	.preview-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 12px;
+		margin-top: 24px;
+	}
+	button:disabled {
+		cursor: wait;
+		opacity: 0.65;
+	}
 	.secondary-button {
 		min-height: 42px;
 		padding: 0 18px;
@@ -649,10 +704,20 @@
 		.form-actions button {
 			width: 100%;
 		}
-		.preview-panel { padding: 21px 18px; }
-		.preview-grid { grid-template-columns: 1fr; }
-		.preview-full { grid-column: auto; }
-		.preview-actions { flex-direction: column-reverse; }
-		.preview-actions button { width: 100%; }
+		.preview-panel {
+			padding: 21px 18px;
+		}
+		.preview-grid {
+			grid-template-columns: 1fr;
+		}
+		.preview-full {
+			grid-column: auto;
+		}
+		.preview-actions {
+			flex-direction: column-reverse;
+		}
+		.preview-actions button {
+			width: 100%;
+		}
 	}
 </style>

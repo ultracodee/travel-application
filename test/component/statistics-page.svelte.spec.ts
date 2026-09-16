@@ -27,21 +27,32 @@ describe('statistics page', () => {
 			vi.fn((input: RequestInfo | URL) => {
 				const url = String(input);
 				if (url.endsWith('/api/auth')) {
-					return Promise.resolve(new Response(JSON.stringify({ data: { id: 'U002', name: '李经理', department: '研发部', roles: ['approver'] }, users: [] })));
+					return Promise.resolve(
+						new Response(
+							JSON.stringify({
+								data: { id: 'U002', name: '李经理', department: '研发部', roles: ['approver'] },
+								users: []
+							})
+						)
+					);
 				}
-				return Promise.resolve(new Response(JSON.stringify({
-					data: {
-						applications: [application],
-						statusCounts: { pending: 0, approved: 1, rejected: 0 },
-						departmentCounts: { 研发部: 1 },
-						monthlyTrend: { months: ['2026-09'], series: [{ department: '研发部', data: [1] }] },
-						monthlyCost: { months: ['2026-09'], data: [1200] },
-						totalSubmitted: 1,
-						totalCost: 1200,
-						completedCount: 1,
-						approvalRate: 100
-					}
-				})));
+				return Promise.resolve(
+					new Response(
+						JSON.stringify({
+							data: {
+								applications: [application],
+								statusCounts: { pending: 0, approved: 1, rejected: 0 },
+								departmentCounts: { 研发部: 1 },
+								monthlyTrend: { months: ['2026-09'], series: [{ department: '研发部', data: [1] }] },
+								monthlyCost: { months: ['2026-09'], data: [1200] },
+								totalSubmitted: 1,
+								totalCost: 1200,
+								completedCount: 1,
+								approvalRate: 100
+							}
+						})
+					)
+				);
 			})
 		);
 	});

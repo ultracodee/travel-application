@@ -12,11 +12,10 @@
 	let switching = $state(false);
 
 	$effect(() => {
-		getAuthState()
-			.then((result) => {
-				currentUser = result.data;
-				users = result.users;
-			});
+		getAuthState().then((result) => {
+			currentUser = result.data;
+			users = result.users;
+		});
 	});
 
 	async function switchUser(userId: string) {
@@ -57,7 +56,7 @@
 
 		<nav aria-label="主导航">
 			<p class="nav-heading">工作空间</p>
-			{#each navigation as item}
+			{#each navigation as item (item.href)}
 				<a href={item.href} class:active={isActive(item.href)} onclick={() => (mobileMenuOpen = false)}>
 					<span class="nav-icon" aria-hidden="true">{item.icon}</span>{item.label}
 				</a>
@@ -65,9 +64,17 @@
 		</nav>
 
 		<div class="sidebar-switcher">
-			<select class="user-switcher" aria-label="切换演示用户" disabled={switching} value={currentUser?.id ?? ''} onchange={(event) => switchUser(event.currentTarget.value)}>
+			<select
+				class="user-switcher"
+				aria-label="切换演示用户"
+				disabled={switching}
+				value={currentUser?.id ?? ''}
+				onchange={(event) => switchUser(event.currentTarget.value)}
+			>
 				<option value="" disabled>切换用户</option>
-				{#each users as user}<option value={user.id}>{user.name}（{hasRole(user, 'approver') ? '审批人' : '员工'}）</option>{/each}
+				{#each users as user (user.id)}<option value={user.id}
+						>{user.name}（{hasRole(user, 'approver') ? '审批人' : '员工'}）</option
+					>{/each}
 			</select>
 		</div>
 	</aside>
@@ -81,7 +88,11 @@
 			<button class="menu-button" aria-label="打开导航" onclick={() => (mobileMenuOpen = true)}>☰</button>
 			<div class="topbar-title"><span>企业服务中心</span><strong>差旅申请管理</strong></div>
 			<div class="topbar-actions">
-				<div class="header-user"><strong>{currentUser?.name ?? '未登录'}</strong><span>{currentUser ? `${currentUser.department} · ${currentUser.position ?? '用户'}` : '请选择演示用户'}</span></div>
+				<div class="header-user">
+					<strong>{currentUser?.name ?? '未登录'}</strong><span
+						>{currentUser ? `${currentUser.department} · ${currentUser.position ?? '用户'}` : '请选择演示用户'}</span
+					>
+				</div>
 				<div class="header-avatar">{currentUser?.name?.slice(0, 1) ?? '?'}</div>
 			</div>
 		</header>

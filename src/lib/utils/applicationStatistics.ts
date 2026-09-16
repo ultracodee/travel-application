@@ -30,9 +30,7 @@ export function countByStatus(applications: TravelApplication[]): Record<Applica
 	return counts;
 }
 
-export function countBySubmittedStatus(
-	applications: TravelApplication[]
-): Record<SubmittedApplicationStatus, number> {
+export function countBySubmittedStatus(applications: TravelApplication[]): Record<SubmittedApplicationStatus, number> {
 	const counts: Record<SubmittedApplicationStatus, number> = {
 		pending: 0,
 		approved: 0,
@@ -71,10 +69,7 @@ export function getRecentMonths(referenceDate: Date | string = new Date(), month
 	});
 }
 
-export function getMonthsByRange(
-	referenceDate: Date | string = new Date(),
-	range: StatisticsRange = 'year'
-): string[] {
+export function getMonthsByRange(referenceDate: Date | string = new Date(), range: StatisticsRange = 'year'): string[] {
 	const date = new Date(referenceDate);
 	if (Number.isNaN(date.getTime())) throw new Error('无效的参考日期');
 
@@ -100,7 +95,10 @@ export function countByDepartmentMonthlyTrend(
 	referenceDate: Date | string = new Date(),
 	monthCount: number | StatisticsRange = 12
 ): { months: string[]; series: DepartmentMonthlyTrend[] } {
-	const months = typeof monthCount === 'number' ? getRecentMonths(referenceDate, monthCount) : getMonthsByRange(referenceDate, monthCount);
+	const months =
+		typeof monthCount === 'number'
+			? getRecentMonths(referenceDate, monthCount)
+			: getMonthsByRange(referenceDate, monthCount);
 	const monthIndex = new Map(months.map((month, index) => [month, index]));
 	const values = new Map<string, number[]>();
 
@@ -128,7 +126,10 @@ export function sumByMonth(
 	referenceDate: Date | string = new Date(),
 	monthCount: number | StatisticsRange = 12
 ): MonthlyTrend {
-	const months = typeof monthCount === 'number' ? getRecentMonths(referenceDate, monthCount) : getMonthsByRange(referenceDate, monthCount);
+	const months =
+		typeof monthCount === 'number'
+			? getRecentMonths(referenceDate, monthCount)
+			: getMonthsByRange(referenceDate, monthCount);
 	const monthIndex = new Map(months.map((month, index) => [month, index]));
 	const data = Array.from({ length: months.length }, () => 0);
 

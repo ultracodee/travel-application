@@ -40,8 +40,10 @@ export async function PATCH({ params, request, cookies }) {
 		return json({ data: application });
 	} catch (cause) {
 		if (cause instanceof SyntaxError) return json({ message: '请求体格式无效' }, { status: 400 });
-		if (cause instanceof Error && cause.message.includes('不能审批自己')) return json({ message: cause.message }, { status: 403 });
-		if (cause instanceof Error && cause.message.includes('指定审批人')) return json({ message: cause.message }, { status: 403 });
+		if (cause instanceof Error && cause.message.includes('不能审批自己'))
+			return json({ message: cause.message }, { status: 403 });
+		if (cause instanceof Error && cause.message.includes('指定审批人'))
+			return json({ message: cause.message }, { status: 403 });
 		if (cause instanceof Error) return json({ message: cause.message }, { status: 409 });
 		throw cause;
 	}
