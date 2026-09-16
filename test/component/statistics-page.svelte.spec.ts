@@ -70,4 +70,81 @@ describe('statistics page', () => {
 		await expect.element(page.getByText('部门月度申请趋势')).toBeInTheDocument();
 		await expect.element(page.getByText('月度预计费用')).toBeInTheDocument();
 	});
+
+	it('reloads statistics when the selected range changes', async () => {
+		const fetchMock = vi.fn((input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.endsWith('/api/auth')) {
+				return Promise.resolve(
+					new Response(
+						JSON.stringify({
+							data: { id: 'U002', name: '李经理', department: '研发部', roles: ['approver'] },
+							users: []
+						})
+					)
+				);
+			}
+			const range = new URL(url, 'http://localhost').searchParams.get('range');
+			return Promise.resolve(
+				new Response(
+					JSON.stringify({
+						data: {
+							applications: [],
+							statusCounts: { pending: 0, approved: 0, rejected: 0 },
+							typeCounts: { travel: 0, purchase: 0, expense: 0, overtime: 0 },
+							departmentCounts: {},
+							monthlyTrend: { months: [range ?? 'year'], series: [] },
+							monthlyCost: { months: [range ?? 'year'], data: [] },
+							totalSubmitted: 0,
+							totalCost: 0,
+							completedCount: 0,
+							approvalRate: 0
+						}
+					})
+				)
+			);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		render(StatisticsPage);
+
+		await expect.element(page.getByLabelText('统计时间范围')).toBeInTheDocument();
+		await page.getByLabelText('统计时间范围').selectOptions('quarter');
+		await expect.poll(() => fetchMock.mock.calls.some(([input]) => String(input).includes('range=quarter'))).toBe(true);
+		await expect.element(page.getByText('最近 3 个月')).toBeInTheDocument();
+	});
+
+	it('renders zero metrics and charts when the selected range has no applications', async () => {
+		const emptyResponse = {
+			applications: [],
+			statusCounts: { pending: 0, approved: 0, rejected: 0 },
+			typeCounts: { travel: 0, purchase: 0, expense: 0, overtime: 0 },
+			departmentCounts: {},
+			monthlyTrend: { months: [], series: [] },
+			monthlyCost: { months: [], data: [] },
+			totalSubmitted: 0,
+			totalCost: 0,
+			completedCount: 0,
+			approvalRate: 0
+		};
+		vi.stubGlobal(
+			'fetch',
+			vi.fn((input: RequestInfo | URL) =>
+				Promise.resolve(
+					new Response(
+						JSON.stringify(
+							String(input).endsWith('/api/auth')
+								? { data: { id: 'U002', name: '李经理', roles: ['approver'] }, users: [] }
+								: { data: emptyResponse }
+						)
+					)
+				)
+			)
+		);
+		render(StatisticsPage);
+
+		await expect.element(page.getByText('已提交申请', { exact: true })).toBeInTheDocument();
+		await expect.element(page.getByText('申请状态分布')).toBeInTheDocument();
+		await expect.element(page.getByText('月度预计费用')).toBeInTheDocument();
+		await expect.element(page.getByText('¥ 0', { exact: true })).toBeInTheDocument();
+	});
 });
