@@ -149,6 +149,8 @@ npm run build
 
 批次执行记录、后续批次和验收标准见 [`docs/implementation-plan.md`](docs/implementation-plan.md)。
 
+GitHub 上传前请确认工作区干净，并使用 `git status --short`、`git log --oneline` 检查提交记录。`.gitignore` 已排除依赖目录、构建产物、测试报告、编辑器配置、环境变量和日志文件；`.env.example` 可提交，真实 `.env` 文件不会被纳入仓库。
+
 ## 数据统计
 
 统计页面仅对李经理审批人账号开放，使用 ECharts 展示通用申请指标和图表：
