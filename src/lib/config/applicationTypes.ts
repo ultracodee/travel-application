@@ -88,8 +88,8 @@ export const APPLICATION_TYPE_CONFIGS: ApplicationTypeConfig[] = [
 				suffix: '小时',
 				readonly: true
 			},
-			{ name: 'timeOff', label: '申请调休', type: 'checkbox' },
-			{ name: 'overtimeReason', label: '加班原因', type: 'textarea', required: true, fullWidth: true }
+			{ name: 'overtimeReason', label: '加班原因', type: 'textarea', required: true, fullWidth: true },
+			{ name: 'timeOff', label: '申请调休', type: 'checkbox' }
 		]
 	}
 ];

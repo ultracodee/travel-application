@@ -22,7 +22,7 @@
 
 <div class="form-grid">
 	{#each fields as field (field.name)}
-		<div class:full-width={field.fullWidth} class="field">
+		<div class:full-width={field.fullWidth} class:checkbox-field={field.type === 'checkbox'} class="field">
 			<label for={`application-${field.name}`}
 				>{field.label}{#if field.required}
 					<span>*</span>{/if}</label
@@ -117,7 +117,19 @@
 	.checkbox-input {
 		width: 16px;
 		height: 16px;
-		margin: 7px 0 0;
+		margin: 0;
+	}
+	.checkbox-field {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.checkbox-field label {
+		order: 2;
+		margin: 0;
+	}
+	.checkbox-field .checkbox-input {
+		order: 1;
 	}
 	.field-suffix {
 		display: block;
