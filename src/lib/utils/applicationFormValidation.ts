@@ -35,5 +35,12 @@ export function validateApplicationInput(input: ApplicationInput): ApplicationFo
 			errors[field.name] = `${field.label}选项无效`;
 		}
 	}
+	if (input.type === 'overtime') {
+		const start = `${values.overtimeDate ?? ''}T${values.startTime ?? ''}`;
+		const end = `${values.endDate ?? ''}T${values.endTime ?? ''}`;
+		if (values.overtimeDate && values.startTime && values.endDate && values.endTime && end <= start) {
+			errors.endDate = '结束时间必须晚于开始时间';
+		}
+	}
 	return errors;
 }

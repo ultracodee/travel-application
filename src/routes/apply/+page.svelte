@@ -128,7 +128,16 @@
 	}
 
 	function updateFormData(name: string, value: ApplicationFieldValue) {
-		form = { ...form, formData: { ...(form.formData ?? {}), [name]: value } };
+		const nextFormData = { ...(form.formData ?? {}), [name]: value };
+		if (form.type === 'overtime' && ['overtimeDate', 'startTime', 'endDate', 'endTime'].includes(name)) {
+			const start = `${nextFormData.overtimeDate ?? ''}T${nextFormData.startTime ?? ''}`;
+			const end = `${nextFormData.endDate ?? ''}T${nextFormData.endTime ?? ''}`;
+			if (nextFormData.overtimeDate && nextFormData.startTime && nextFormData.endDate && nextFormData.endTime) {
+				const duration = (Date.parse(end) - Date.parse(start)) / 3_600_000;
+				nextFormData.durationHours = duration > 0 ? Number(duration.toFixed(2)) : 0;
+			}
+		}
+		form = { ...form, formData: nextFormData };
 		errors = { ...errors, [name]: undefined };
 		notice = '';
 		previewReady = false;

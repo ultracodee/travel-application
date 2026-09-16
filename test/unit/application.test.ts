@@ -200,6 +200,24 @@ describe('通用申请类型校验', () => {
 		expect(purchaseErrors.expectedDate).toBe('期望到货日期不能早于今天');
 		expect(overtimeErrors.overtimeDate).toBe('加班日期不能早于今天');
 	});
+
+	it('校验加班结束日期时间必须晚于开始日期时间', () => {
+		const errors = validateApplicationInput({
+			...input(),
+			type: 'overtime',
+			formData: {
+				project: '版本发布',
+				overtimeDate: '2026-09-20',
+				startTime: '22:00',
+				endDate: '2026-09-20',
+				endTime: '22:00',
+				durationHours: 0,
+				overtimeReason: '版本发布保障',
+				timeOff: false
+			}
+		});
+		expect(errors.endDate).toBe('结束时间必须晚于开始时间');
+	});
 });
 
 describe('通用申请展示适配', () => {

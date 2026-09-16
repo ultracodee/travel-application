@@ -78,6 +78,7 @@ export interface ApplicationFieldConfig {
 	suffix?: string;
 	fullWidth?: boolean;
 	minToday?: boolean;
+	readonly?: boolean;
 }
 
 export interface ApplicationTypeConfig {

@@ -72,13 +72,22 @@ export const APPLICATION_TYPE_CONFIGS: ApplicationTypeConfig[] = [
 		type: 'overtime',
 		label: '加班申请',
 		description: '用于工作日或休息日的计划加班申请。',
-		summaryFields: ['overtimeDate', 'startTime', 'endTime', 'durationHours', 'timeOff'],
+		summaryFields: ['project', 'overtimeDate', 'startTime', 'endDate', 'endTime', 'durationHours', 'timeOff'],
 		fields: [
 			{ name: 'project', label: '项目', type: 'text', required: true },
 			{ name: 'overtimeDate', label: '加班日期', type: 'date', required: true, minToday: true },
 			{ name: 'startTime', label: '开始时间', type: 'time', required: true },
+			{ name: 'endDate', label: '结束日期', type: 'date', required: true, minToday: true },
 			{ name: 'endTime', label: '结束时间', type: 'time', required: true },
-			{ name: 'durationHours', label: '预计加班时长', type: 'number', required: true, min: 0, suffix: '小时' },
+			{
+				name: 'durationHours',
+				label: '预计加班时长',
+				type: 'number',
+				required: true,
+				min: 0,
+				suffix: '小时',
+				readonly: true
+			},
 			{ name: 'timeOff', label: '申请调休', type: 'checkbox' },
 			{ name: 'overtimeReason', label: '加班原因', type: 'textarea', required: true, fullWidth: true }
 		]

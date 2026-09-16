@@ -83,6 +83,7 @@ function generatedApplication(type: ApplicationType, index: number): Application
 					: {
 							project: ['版本发布', '客户上线', '专项交付'][index % 3],
 							overtimeDate: date,
+							endDate: date,
 							startTime: '19:00',
 							endTime: '22:00',
 							durationHours: 3,
@@ -220,6 +221,7 @@ export const supplementalApplications: Application[] = [
 		formData: {
 			project: '版本发布保障',
 			overtimeDate: '2026-07-18',
+			endDate: '2026-07-18',
 			startTime: '09:00',
 			endTime: '18:00',
 			durationHours: 8,
@@ -283,6 +285,7 @@ export const supplementalApplications: Application[] = [
 		formData: {
 			project: '客户上线支持',
 			overtimeDate: '2026-08-15',
+			endDate: '2026-08-15',
 			startTime: '10:00',
 			endTime: '19:00',
 			durationHours: 8,

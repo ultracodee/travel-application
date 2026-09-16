@@ -57,6 +57,7 @@
 					type={field.type}
 					min={field.minToday ? today : field.min}
 					maxlength={field.maxLength}
+					readonly={field.readonly}
 					value={String(values[field.name] ?? '')}
 					oninput={(event) =>
 						onChange(
