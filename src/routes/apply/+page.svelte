@@ -245,6 +245,10 @@
 			return { ok: true, redirected: true, data: null };
 		}
 		const data = await response.json().catch(() => ({}));
+		if (data?.type === 'redirect' && typeof data.location === 'string') {
+			await goto(data.location);
+			return { ok: true, redirected: true, data };
+		}
 		return { ok: response.ok, redirected: false, data };
 	}
 </script>
