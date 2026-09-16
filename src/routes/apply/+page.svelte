@@ -609,7 +609,7 @@
 	}
 	textarea {
 		padding: 11px 12px;
-		resize: vertical;
+		resize: none;
 		line-height: 1.55;
 	}
 	input::placeholder,

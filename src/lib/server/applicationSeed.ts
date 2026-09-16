@@ -4,6 +4,41 @@ const approver = { id: 'U002', name: '李经理', department: '研发部', posit
 
 export const supplementalApplications: Application[] = [
 	{
+		id: 'PUR-202608-002',
+		type: 'purchase',
+		title: '研发测试设备采购',
+		description: '补充自动化测试和移动端兼容性验证设备。',
+		applicant: { id: 'U001', name: '张三', department: '研发部', position: '前端开发' },
+		approverId: approver.id,
+		formData: {
+			itemName: '移动测试设备',
+			quantity: 3,
+			budgetAmount: 4200,
+			expectedDate: '2026-08-20',
+			purchaseReason: '支持新版本多设备兼容性测试。',
+			remark: '纳入研发部季度设备预算。'
+		},
+		from: '',
+		to: '',
+		startDate: '2026-08-20',
+		endDate: '2026-08-20',
+		reason: '研发测试设备补充',
+		transport: 'other',
+		estimatedCost: 4200,
+		status: 'approved',
+		approvalRecords: [
+			{
+				id: 'APR-PUR-202608-002',
+				approver: { ...approver },
+				action: 'approved',
+				comment: '同意采购',
+				operatedAt: '2026-08-12T10:00:00.000Z'
+			}
+		],
+		createdAt: '2026-08-10T09:00:00.000Z',
+		updatedAt: '2026-08-12T10:00:00.000Z'
+	},
+	{
 		id: 'PUR-202609-001',
 		type: 'purchase',
 		title: '客户成功部培训设备采购',
@@ -100,5 +135,68 @@ export const supplementalApplications: Application[] = [
 		],
 		createdAt: '2026-07-14T09:00:00.000Z',
 		updatedAt: '2026-07-15T11:00:00.000Z'
+	},
+	{
+		id: 'EXP-202607-002',
+		type: 'expense',
+		title: '客户活动物料费用报销',
+		description: '报销市场活动物料和现场布置费用。',
+		applicant: { id: 'U003', name: '王芳', department: '市场部', position: '市场专员' },
+		approverId: approver.id,
+		formData: {
+			expenseType: 'office',
+			expenseAmount: 860,
+			expenseDate: '2026-07-22',
+			expenseDescription: '客户活动现场物料及布置费用。',
+			invoiceAvailable: true,
+			accountLastFour: '6138'
+		},
+		from: '',
+		to: '',
+		startDate: '2026-07-22',
+		endDate: '2026-07-22',
+		reason: '客户活动费用报销',
+		transport: 'other',
+		estimatedCost: 860,
+		status: 'pending',
+		approvalRecords: [],
+		createdAt: '2026-07-23T09:00:00.000Z',
+		updatedAt: '2026-07-23T09:00:00.000Z'
+	},
+	{
+		id: 'OVT-202608-002',
+		type: 'overtime',
+		title: '客户上线支持加班申请',
+		description: '配合客户上线窗口完成系统验证和问题响应。',
+		applicant: { id: 'U004', name: '陈敏', department: '客户成功部', position: '客户成功专员' },
+		approverId: approver.id,
+		formData: {
+			project: '客户上线支持',
+			overtimeDate: '2026-08-15',
+			startTime: '10:00',
+			endTime: '19:00',
+			durationHours: 8,
+			overtimeReason: '配合客户上线完成验证和问题响应。',
+			timeOff: true
+		},
+		from: '',
+		to: '',
+		startDate: '2026-08-15',
+		endDate: '2026-08-15',
+		reason: '客户上线支持',
+		transport: 'other',
+		estimatedCost: 0,
+		status: 'approved',
+		approvalRecords: [
+			{
+				id: 'APR-OVT-202608-002',
+				approver: { ...approver },
+				action: 'approved',
+				comment: '同意调休安排',
+				operatedAt: '2026-08-13T11:00:00.000Z'
+			}
+		],
+		createdAt: '2026-08-12T09:00:00.000Z',
+		updatedAt: '2026-08-13T11:00:00.000Z'
 	}
 ];
