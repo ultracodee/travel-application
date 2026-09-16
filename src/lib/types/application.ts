@@ -74,10 +74,13 @@ export interface ApplicationFieldConfig {
 	placeholder?: string;
 	options?: Array<{ label: string; value: string }>;
 	min?: number;
+	max?: number;
 	maxLength?: number;
 	suffix?: string;
 	fullWidth?: boolean;
 	minToday?: boolean;
+	maxToday?: boolean;
+	integer?: boolean;
 	readonly?: boolean;
 }
 

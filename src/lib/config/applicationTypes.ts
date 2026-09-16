@@ -35,11 +35,21 @@ export const APPLICATION_TYPE_CONFIGS: ApplicationTypeConfig[] = [
 		summaryFields: ['itemName', 'quantity', 'budgetAmount', 'expectedDate'],
 		fields: [
 			{ name: 'itemName', label: '采购物品', type: 'text', required: true },
-			{ name: 'quantity', label: '采购数量', type: 'number', required: true, min: 1, suffix: '件' },
-			{ name: 'budgetAmount', label: '预算金额', type: 'number', required: true, min: 0, suffix: '元' },
+			{
+				name: 'quantity',
+				label: '采购数量',
+				type: 'number',
+				required: true,
+				min: 1,
+				max: 10000,
+				integer: true,
+				suffix: '件'
+			},
+			{ name: 'budgetAmount', label: '预算金额', type: 'number', required: true, min: 0, max: 1000000, suffix: '元' },
 			{ name: 'expectedDate', label: '期望到货日期', type: 'date', required: true, minToday: true },
-			{ name: 'purchaseReason', label: '采购原因', type: 'textarea', required: true, fullWidth: true },
-			{ name: 'remark', label: '备注', type: 'textarea', fullWidth: true }
+			{ name: 'purchasePurpose', label: '采购用途', type: 'text', required: true, maxLength: 200 },
+			{ name: 'purchaseReason', label: '采购原因', type: 'textarea', required: true, fullWidth: true, maxLength: 500 },
+			{ name: 'remark', label: '备注', type: 'textarea', fullWidth: true, maxLength: 300 }
 		]
 	},
 	{
@@ -61,10 +71,18 @@ export const APPLICATION_TYPE_CONFIGS: ApplicationTypeConfig[] = [
 					{ label: '办公费', value: 'office' }
 				]
 			},
-			{ name: 'expenseAmount', label: '报销金额', type: 'number', required: true, min: 0, suffix: '元' },
-			{ name: 'expenseDate', label: '费用发生日期', type: 'date', required: true },
-			{ name: 'invoiceAvailable', label: '已有发票', type: 'checkbox', required: true },
-			{ name: 'expenseDescription', label: '费用说明', type: 'textarea', required: true, fullWidth: true },
+			{ name: 'expenseAmount', label: '报销金额', type: 'number', required: true, min: 0, max: 1000000, suffix: '元' },
+			{ name: 'expenseDate', label: '费用发生日期', type: 'date', required: true, maxToday: true },
+			{ name: 'invoiceAvailable', label: '已有发票', type: 'checkbox' },
+			{
+				name: 'expenseDescription',
+				label: '费用说明',
+				type: 'textarea',
+				required: true,
+				fullWidth: true,
+				maxLength: 500
+			},
+			{ name: 'noInvoiceReason', label: '无票说明', type: 'textarea', fullWidth: true, maxLength: 300 },
 			{ name: 'accountLastFour', label: '收款账户后四位', type: 'text', maxLength: 4 }
 		]
 	},
@@ -88,7 +106,7 @@ export const APPLICATION_TYPE_CONFIGS: ApplicationTypeConfig[] = [
 				suffix: '小时',
 				readonly: true
 			},
-			{ name: 'overtimeReason', label: '加班原因', type: 'textarea', required: true, fullWidth: true },
+			{ name: 'overtimeReason', label: '加班原因', type: 'textarea', required: true, fullWidth: true, maxLength: 500 },
 			{ name: 'timeOff', label: '申请调休', type: 'checkbox' }
 		]
 	}

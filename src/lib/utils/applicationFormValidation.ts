@@ -25,14 +25,32 @@ export function validateApplicationInput(input: ApplicationInput): ApplicationFo
 		if (field.type === 'number' && value !== undefined && (typeof value !== 'number' || value <= (field.min ?? 0))) {
 			errors[field.name] = `${field.label}必须大于 ${field.min ?? 0}`;
 		}
+		if (field.type === 'number' && field.integer && typeof value === 'number' && !Number.isInteger(value)) {
+			errors[field.name] = `${field.label}必须是整数`;
+		}
+		if (field.type === 'number' && field.max !== undefined && typeof value === 'number' && value > field.max) {
+			errors[field.name] = `${field.label}不能超过 ${field.max}`;
+		}
 		if (field.maxLength && typeof value === 'string' && value.length > field.maxLength) {
 			errors[field.name] = `${field.label}不能超过 ${field.maxLength} 个字符`;
 		}
 		if (field.minToday && typeof value === 'string' && value < getLocalDateString()) {
 			errors[field.name] = `${field.label}不能早于今天`;
 		}
+		if (field.maxToday && typeof value === 'string' && value > getLocalDateString()) {
+			errors[field.name] = `${field.label}不能晚于今天`;
+		}
 		if (field.options && value !== undefined && !field.options.some((option) => option.value === value)) {
 			errors[field.name] = `${field.label}选项无效`;
+		}
+	}
+	if (input.type === 'expense') {
+		const account = values.accountLastFour;
+		if (account !== undefined && account !== '' && !/^\d{4}$/.test(String(account))) {
+			errors.accountLastFour = '收款账户后四位必须是 4 位数字';
+		}
+		if (values.invoiceAvailable === false && !String(values.noInvoiceReason ?? '').trim()) {
+			errors.noInvoiceReason = '没有发票时请输入无票说明';
 		}
 	}
 	if (input.type === 'overtime') {

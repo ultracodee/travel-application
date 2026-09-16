@@ -68,6 +68,7 @@ function generatedApplication(type: ApplicationType, index: number): Application
 						quantity: 1 + (index % 5),
 						budgetAmount: amount,
 						expectedDate: date,
+						purchasePurpose: '部门业务开展需要补充物资。',
 						purchaseReason: '部门业务开展需要补充物资。',
 						remark: '按部门预算执行。'
 					}
@@ -78,6 +79,7 @@ function generatedApplication(type: ApplicationType, index: number): Application
 							expenseDate: date,
 							expenseDescription: '部门日常业务产生的费用。',
 							invoiceAvailable: true,
+							noInvoiceReason: '',
 							accountLastFour: `${5200 + index}`
 						}
 					: {
@@ -126,6 +128,7 @@ export const supplementalApplications: Application[] = [
 			quantity: 3,
 			budgetAmount: 4200,
 			expectedDate: '2026-08-20',
+			purchasePurpose: '支持新版本多设备兼容性测试。',
 			purchaseReason: '支持新版本多设备兼容性测试。',
 			remark: '纳入研发部季度设备预算。'
 		},
@@ -161,6 +164,7 @@ export const supplementalApplications: Application[] = [
 			quantity: 6,
 			budgetAmount: 6800,
 			expectedDate: '2026-09-25',
+			purchasePurpose: '支持客户培训现场演示。',
 			purchaseReason: '培训现场需要双屏演示和多接口适配，现有设备数量不足。',
 			remark: '优先选择可开具增值税专用发票的供应商。'
 		},
@@ -189,6 +193,7 @@ export const supplementalApplications: Application[] = [
 			expenseDate: '2026-08-28',
 			expenseDescription: '华东区域市场活动期间市内交通及客户拜访交通费用。',
 			invoiceAvailable: true,
+			noInvoiceReason: '',
 			accountLastFour: '5821'
 		},
 		from: '',
@@ -261,6 +266,7 @@ export const supplementalApplications: Application[] = [
 			expenseDate: '2026-07-22',
 			expenseDescription: '客户活动现场物料及布置费用。',
 			invoiceAvailable: true,
+			noInvoiceReason: '',
 			accountLastFour: '6138'
 		},
 		from: '',

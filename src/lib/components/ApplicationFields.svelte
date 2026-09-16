@@ -56,6 +56,7 @@
 					id={`application-${field.name}`}
 					type={field.type}
 					min={field.minToday ? today : field.min}
+					max={field.maxToday ? today : field.max}
 					maxlength={field.maxLength}
 					readonly={field.readonly}
 					value={String(values[field.name] ?? '')}

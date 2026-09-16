@@ -139,12 +139,13 @@ describe('通用申请类型校验', () => {
 				expenseDate: '2026-09-01',
 				expenseDescription: '说明',
 				invoiceAvailable: false,
+				noInvoiceReason: '',
 				accountLastFour: '12345'
 			}
 		});
 		expect(errors.expenseType).toBe('报销类型选项无效');
-		expect(errors.invoiceAvailable).toBe('请输入已有发票');
-		expect(errors.accountLastFour).toContain('不能超过');
+		expect(errors.noInvoiceReason).toBe('没有发票时请输入无票说明');
+		expect(errors.accountLastFour).toBe('收款账户后四位必须是 4 位数字');
 	});
 
 	it('校验加班申请的时间和必填业务字段', () => {
@@ -181,6 +182,7 @@ describe('通用申请类型校验', () => {
 				quantity: 1,
 				budgetAmount: 1000,
 				expectedDate: date,
+				purchasePurpose: '设备补充',
 				purchaseReason: '设备补充'
 			}
 		});
@@ -231,6 +233,7 @@ describe('通用申请展示适配', () => {
 				quantity: 2,
 				budgetAmount: 3600,
 				expectedDate: '2026-10-08',
+				purchasePurpose: '项目扩容',
 				supplier: '待比价',
 				purchaseReason: '项目扩容'
 			},
