@@ -4,6 +4,7 @@ import {
 	countByDepartment,
 	countByDepartmentMonthlyTrend,
 	countByApplicationType,
+	countBySubmittedApplicationType,
 	countByStatus,
 	countBySubmittedDepartment,
 	countBySubmittedStatus,
@@ -14,9 +15,28 @@ import {
 } from '$lib/utils/applicationStatistics';
 import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
-import { changeApplicationStatus, createApplication, listApplicationsPage } from '$lib/server/applicationRepository';
+import {
+	changeApplicationStatus,
+	createApplication,
+	deleteDraft,
+	getApplicationsForUser,
+	listApplications,
+	listApplicationsPage,
+	updateDraft,
+	updateEditableApplication
+} from '$lib/server/applicationRepository';
+import { users } from '$lib/server/auth';
 import { APPLICATION_TYPE_CONFIGS, APPLICATION_TYPE_MAP } from '$lib/config/applicationTypes';
 import { validateApplicationInput } from '$lib/utils/applicationFormValidation';
+import {
+	getApplicationAmount,
+	getApplicationAmountFromForm,
+	getApplicationBusinessDate,
+	getApplicationFieldEntries,
+	getApplicationFieldEntriesFromForm,
+	getApplicationSummary,
+	getApplicationTypeLabel
+} from '$lib/utils/applicationDisplay';
 
 const application: TravelApplication = {
 	id: 'TRV-TEST-001',
@@ -105,6 +125,109 @@ describe('通用申请类型校验', () => {
 		expect(errors.quantity).toContain('必须大于');
 		expect(errors.budgetAmount).toContain('必须大于');
 		expect(errors.expectedDate).toBe('请输入期望到货日期');
+	});
+
+	it('校验下拉选项、复选框和文本长度边界', () => {
+		const errors = validateApplicationInput({
+			...input(),
+			type: 'expense',
+			title: '费用报销',
+			description: '测试报销',
+			formData: {
+				expenseType: 'unknown',
+				expenseAmount: 100,
+				expenseDate: '2026-09-01',
+				expenseDescription: '说明',
+				invoiceAvailable: false,
+				accountLastFour: '12345'
+			}
+		});
+		expect(errors.expenseType).toBe('报销类型选项无效');
+		expect(errors.invoiceAvailable).toBe('请输入已有发票');
+		expect(errors.accountLastFour).toContain('不能超过');
+	});
+
+	it('校验加班申请的时间和必填业务字段', () => {
+		const errors = validateApplicationInput({
+			...input(),
+			type: 'overtime',
+			title: '版本发布加班',
+			description: '版本发布',
+			formData: {
+				overtimeDate: '',
+				startTime: '',
+				endTime: '',
+				durationHours: 0,
+				overtimeReason: '',
+				timeOff: false
+			}
+		});
+		expect(errors.overtimeDate).toBe('请输入加班日期');
+		expect(errors.durationHours).toContain('必须大于');
+		expect(errors.overtimeReason).toBe('请输入加班原因');
+	});
+});
+
+describe('通用申请展示适配', () => {
+	it('按申请类型生成类型、摘要、金额和业务日期', () => {
+		const purchase = {
+			...application,
+			type: 'purchase' as const,
+			title: '采购显示器',
+			formData: {
+				itemName: '显示器',
+				quantity: 2,
+				budgetAmount: 3600,
+				expectedDate: '2026-10-08',
+				supplier: '待比价',
+				purchaseReason: '项目扩容'
+			},
+			startDate: '2026-10-08',
+			estimatedCost: 3600
+		};
+		expect(getApplicationTypeLabel(purchase)).toBe('采购申请');
+		expect(getApplicationSummary(purchase)).toContain('显示器');
+		expect(getApplicationAmount(purchase)).toBe(3600);
+		expect(getApplicationBusinessDate(purchase)).toBe('2026-10-08');
+		expect(getApplicationFieldEntries(purchase)).toEqual(
+			expect.arrayContaining([
+				{ label: '采购物品', value: '显示器' },
+				{ label: '采购数量', value: '2' }
+			])
+		);
+		expect(getApplicationSummary(application)).toBe('上海 → 杭州');
+		expect(countBySubmittedApplicationType([application, { ...application, status: 'draft' }])).toEqual({
+			travel: 1,
+			purchase: 0,
+			expense: 0,
+			overtime: 0
+		});
+	});
+
+	it('支持表单金额回退、无金额类型和布尔/选项字段格式化', () => {
+		expect(getApplicationAmountFromForm('travel', {}, 1800)).toBe(1800);
+		expect(getApplicationAmountFromForm('overtime', { durationHours: 8 }, 800)).toBeUndefined();
+		const entries = getApplicationFieldEntriesFromForm('expense', {
+			expenseType: 'hotel',
+			expenseAmount: 1200,
+			expenseDate: '2026-09-02',
+			expenseDescription: '住宿',
+			invoiceAvailable: true
+		});
+		expect(entries).toEqual(
+			expect.arrayContaining([
+				{ label: '报销类型', value: '住宿费' },
+				{ label: '已有发票', value: '是' }
+			])
+		);
+	});
+
+	it('缺少配置字段时使用安全的未知申请和空摘要', () => {
+		const unknown = { ...application, type: 'invalid' as never, formData: {} };
+		expect(getApplicationTypeLabel(unknown)).toBe('未知申请');
+		expect(getApplicationSummary({ ...unknown, type: 'purchase', description: '采购说明' })).toBe('采购说明');
+		expect(getApplicationAmountFromForm(undefined, undefined)).toBeUndefined();
+		expect(getApplicationFieldEntriesFromForm(undefined, undefined).length).toBeGreaterThan(0);
 	});
 });
 
@@ -302,6 +425,50 @@ describe('状态流转和统计', () => {
 		const approved = changeApplicationStatus(created.id, 'approved', 'U002', '同意出差');
 		expect(approved?.status).toBe('approved');
 		expect(approved?.approvalRecords.at(-1)?.comment).toBe('同意出差');
+	});
+
+	it('支持驳回后由申请人编辑并重新提交，且保留审批记录', () => {
+		const created = createApplication(input(), application.applicant);
+		changeApplicationStatus(created.id, 'pending', 'U001');
+		const rejected = changeApplicationStatus(created.id, 'rejected', 'U002', '请补充业务背景');
+		expect(rejected?.status).toBe('rejected');
+		expect(rejected?.approvalRecords).toHaveLength(1);
+		const edited = updateEditableApplication(
+			created.id,
+			{
+				...input(),
+				title: '补充说明后的申请',
+				description: '补充了客户和项目背景'
+			},
+			'U001'
+		);
+		expect(edited?.title).toBe('补充说明后的申请');
+		expect(() => updateEditableApplication(created.id, input(), 'U003')).toThrow('只能编辑自己的申请');
+		changeApplicationStatus(created.id, 'pending', 'U001');
+		expect(edited?.status).toBe('pending');
+		expect(edited?.approvalRecords).toHaveLength(1);
+		expect(() => updateEditableApplication(created.id, input(), 'U001')).toThrow('只有草稿或已驳回申请可以编辑');
+	});
+
+	it('限制草稿编辑、删除和审批权限', () => {
+		const created = createApplication(input(), application.applicant);
+		expect(updateDraft(created.id, { ...input(), title: '更新草稿' }, 'U001')?.title).toBe('更新草稿');
+		expect(() => updateDraft(created.id, input(), 'U003')).toThrow('只能编辑自己的草稿');
+		expect(() => changeApplicationStatus(created.id, 'approved', 'U001')).toThrow('不能审批自己的申请');
+		expect(() => deleteDraft(created.id, 'U003')).toThrow('只能删除自己的草稿');
+		expect(deleteDraft(created.id, 'U001')).toBe(true);
+		expect(deleteDraft('missing-id', 'U001')).toBe(false);
+	});
+
+	it('按角色限制申请可见范围并支持类型筛选', () => {
+		const employee = users.find((user) => user.id === 'U001')!;
+		const approverUser = users.find((user) => user.id === 'U002')!;
+		const employeeApplications = getApplicationsForUser(employee);
+		const approverApplications = getApplicationsForUser(approverUser);
+		expect(employeeApplications.every((item) => item.applicant.id === 'U001')).toBe(true);
+		expect(approverApplications.every((item) => item.status !== 'draft')).toBe(true);
+		const purchasePage = listApplicationsPage({ type: 'purchase', applications: listApplications() });
+		expect(purchasePage.data.every((item) => item.type === 'purchase')).toBe(true);
 	});
 
 	it('支持按页返回申请并应用筛选条件', () => {
