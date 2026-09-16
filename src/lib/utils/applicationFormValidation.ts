@@ -3,6 +3,13 @@ import type { ApplicationInput, ApplicationFieldValue } from '$lib/types/applica
 
 export type ApplicationFormErrors = Record<string, string>;
 
+function getLocalDateString(date = new Date()): string {
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(
+		2,
+		'0'
+	)}`;
+}
+
 export function validateApplicationInput(input: ApplicationInput): ApplicationFormErrors {
 	const errors: ApplicationFormErrors = {};
 	if (!input.title?.trim()) errors.title = '请输入申请标题';
@@ -20,6 +27,9 @@ export function validateApplicationInput(input: ApplicationInput): ApplicationFo
 		}
 		if (field.maxLength && typeof value === 'string' && value.length > field.maxLength) {
 			errors[field.name] = `${field.label}不能超过 ${field.maxLength} 个字符`;
+		}
+		if (field.minToday && typeof value === 'string' && value < getLocalDateString()) {
+			errors[field.name] = `${field.label}不能早于今天`;
 		}
 		if (field.options && value !== undefined && !field.options.some((option) => option.value === value)) {
 			errors[field.name] = `${field.label}选项无效`;

@@ -15,8 +15,8 @@ export const supplementalApplications: Application[] = [
 			quantity: 6,
 			budgetAmount: 6800,
 			expectedDate: '2026-09-25',
-			supplier: '待比价',
-			purchaseReason: '培训现场需要双屏演示和多接口适配，现有设备数量不足。'
+			purchaseReason: '培训现场需要双屏演示和多接口适配，现有设备数量不足。',
+			remark: '优先选择可开具增值税专用发票的供应商。'
 		},
 		from: '',
 		to: '',
@@ -73,6 +73,7 @@ export const supplementalApplications: Application[] = [
 		applicant: { id: 'U001', name: '张三', department: '研发部', position: '前端开发' },
 		approverId: approver.id,
 		formData: {
+			project: '版本发布保障',
 			overtimeDate: '2026-07-18',
 			startTime: '09:00',
 			endTime: '18:00',

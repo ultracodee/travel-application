@@ -75,6 +75,9 @@ export interface ApplicationFieldConfig {
 	options?: Array<{ label: string; value: string }>;
 	min?: number;
 	maxLength?: number;
+	suffix?: string;
+	fullWidth?: boolean;
+	minToday?: boolean;
 }
 
 export interface ApplicationTypeConfig {

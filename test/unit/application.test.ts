@@ -166,6 +166,40 @@ describe('通用申请类型校验', () => {
 		expect(errors.durationHours).toContain('必须大于');
 		expect(errors.overtimeReason).toBe('请输入加班原因');
 	});
+
+	it('限制采购到货日期和加班日期不能早于今天', () => {
+		const yesterday = new Date();
+		yesterday.setDate(yesterday.getDate() - 1);
+		const date = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(
+			yesterday.getDate()
+		).padStart(2, '0')}`;
+		const purchaseErrors = validateApplicationInput({
+			...input(),
+			type: 'purchase',
+			formData: {
+				itemName: '显示器',
+				quantity: 1,
+				budgetAmount: 1000,
+				expectedDate: date,
+				purchaseReason: '设备补充'
+			}
+		});
+		const overtimeErrors = validateApplicationInput({
+			...input(),
+			type: 'overtime',
+			formData: {
+				project: '版本发布',
+				overtimeDate: date,
+				startTime: '09:00',
+				endTime: '18:00',
+				durationHours: 8,
+				overtimeReason: '版本发布保障',
+				timeOff: false
+			}
+		});
+		expect(purchaseErrors.expectedDate).toBe('期望到货日期不能早于今天');
+		expect(overtimeErrors.overtimeDate).toBe('加班日期不能早于今天');
+	});
 });
 
 describe('通用申请展示适配', () => {

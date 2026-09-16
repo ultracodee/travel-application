@@ -1,6 +1,12 @@
 <script lang="ts">
 	import type { ApplicationFieldConfig, ApplicationFieldValue } from '$lib/types/application';
 
+	const now = new Date();
+	const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(
+		2,
+		'0'
+	)}`;
+
 	let {
 		fields,
 		values,
@@ -16,7 +22,7 @@
 
 <div class="form-grid">
 	{#each fields as field (field.name)}
-		<div class="field">
+		<div class:full-width={field.fullWidth} class="field">
 			<label for={`application-${field.name}`}
 				>{field.label}{#if field.required}
 					<span>*</span>{/if}</label
@@ -41,6 +47,7 @@
 				<input
 					id={`application-${field.name}`}
 					type="checkbox"
+					class="checkbox-input"
 					checked={Boolean(values[field.name])}
 					onchange={(event) => onChange(field.name, event.currentTarget.checked)}
 				/>
@@ -48,7 +55,7 @@
 				<input
 					id={`application-${field.name}`}
 					type={field.type}
-					min={field.min}
+					min={field.minToday ? today : field.min}
 					maxlength={field.maxLength}
 					value={String(values[field.name] ?? '')}
 					oninput={(event) =>
@@ -58,6 +65,7 @@
 						)}
 				/>
 			{/if}
+			{#if field.suffix}<span class="field-suffix">{field.suffix}</span>{/if}
 			{#if errors[field.name]}<small class="error">{errors[field.name]}</small>{/if}
 		</div>
 	{/each}
@@ -99,8 +107,25 @@
 	}
 	textarea {
 		padding: 11px 12px;
-		resize: vertical;
+		resize: none;
 		line-height: 1.55;
+	}
+	.full-width {
+		grid-column: 1 / -1;
+	}
+	.checkbox-input {
+		width: 16px;
+		height: 16px;
+		margin: 7px 0 0;
+	}
+	.field-suffix {
+		display: block;
+		margin-top: -30px;
+		padding-right: 12px;
+		color: #7b879a;
+		font-size: 13px;
+		text-align: right;
+		pointer-events: none;
 	}
 	.error {
 		display: block;
