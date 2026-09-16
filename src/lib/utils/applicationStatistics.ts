@@ -1,4 +1,4 @@
-import type { TravelApplication, ApplicationStatus } from '$lib/types/application';
+import type { TravelApplication, ApplicationStatus, ApplicationType } from '$lib/types/application';
 
 export type SubmittedApplicationStatus = Exclude<ApplicationStatus, 'draft'>;
 
@@ -10,6 +10,12 @@ export interface DepartmentMonthlyTrend {
 export interface MonthlyTrend {
 	months: string[];
 	data: number[];
+}
+
+export function countByApplicationType(applications: TravelApplication[]): Record<ApplicationType, number> {
+	const counts: Record<ApplicationType, number> = { travel: 0, purchase: 0, expense: 0, overtime: 0 };
+	for (const application of applications) counts[application.type] += 1;
+	return counts;
 }
 
 export type StatisticsRange = 'year' | 'halfYear' | 'quarter' | 'currentYear';

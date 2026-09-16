@@ -6,7 +6,9 @@ import type {
 	TravelApplication,
 	TravelApplicationInput
 } from '$lib/types/application';
+import type { ApplicationType } from '$lib/types/application';
 import type { User } from '$lib/types/user';
+import { supplementalApplications } from './applicationSeed';
 
 export interface ApplicationListQuery {
 	page?: number;
@@ -73,6 +75,10 @@ function application(
 		remark?: string;
 		createdAt?: string;
 		approvalComment?: string;
+		type?: ApplicationType;
+		title?: string;
+		description?: string;
+		formData?: Record<string, string | number | boolean>;
 	} = {}
 ): TravelApplication {
 	const createdAt = options.createdAt ?? `${startDate}T09:00:00.000Z`;
@@ -80,8 +86,19 @@ function application(
 
 	return {
 		id,
+		type: options.type ?? 'travel',
+		title: options.title ?? `${applicant.name}的差旅申请`,
+		description: options.description ?? reason,
 		applicant: { ...applicant },
 		approverId: approver.id,
+		formData: options.formData ?? {
+			from: options.from ?? '上海',
+			to,
+			startDate,
+			endDate,
+			transport: options.transport ?? 'train',
+			estimatedCost
+		},
 		from: options.from ?? '上海',
 		to,
 		startDate,
@@ -107,7 +124,7 @@ function application(
 	};
 }
 
-const applications: TravelApplication[] = [
+const seedApplications: TravelApplication[] = [
 	application(
 		'TRV-202609-001',
 		applicants.zhangsan,
@@ -469,6 +486,8 @@ const applications: TravelApplication[] = [
 	)
 ];
 
+const applications: TravelApplication[] = [...seedApplications, ...supplementalApplications];
+
 function now() {
 	return new Date().toISOString();
 }
@@ -504,7 +523,7 @@ export function listApplicationsPage(query: ApplicationListQuery): PaginatedAppl
 		const matchedDraft = !query.excludeDraft || application.status !== 'draft';
 		const matchedStatus = !query.status || query.status === 'all' || application.status === query.status;
 		const searchableText =
-			`${application.id} ${application.applicant.name} ${application.applicant.department} ${application.from} ${application.to}`.toLowerCase();
+			`${application.id} ${application.type} ${application.title} ${application.description} ${application.applicant.name} ${application.applicant.department} ${application.from} ${application.to}`.toLowerCase();
 		const matchedKeyword = !keyword || searchableText.includes(keyword);
 
 		return matchedApplicant && matchedDraft && matchedStatus && matchedKeyword;
@@ -539,6 +558,17 @@ export function createApplication(
 	const timestamp = now();
 	const application: TravelApplication = {
 		...input,
+		type: input.type ?? 'travel',
+		title: input.title ?? `${applicant.name}的差旅申请`,
+		description: input.description ?? input.reason,
+		formData: input.formData ?? {
+			from: input.from,
+			to: input.to,
+			startDate: input.startDate,
+			endDate: input.endDate,
+			transport: input.transport,
+			estimatedCost: input.estimatedCost
+		},
 		applicant: { ...applicant },
 		approverId,
 		id: nextId(),

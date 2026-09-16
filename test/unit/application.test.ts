@@ -3,6 +3,7 @@ import type { TravelApplication } from '$lib/types/application';
 import {
 	countByDepartment,
 	countByDepartmentMonthlyTrend,
+	countByApplicationType,
 	countByStatus,
 	countBySubmittedDepartment,
 	countBySubmittedStatus,
@@ -14,11 +15,23 @@ import {
 import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
 import { changeApplicationStatus, createApplication, listApplicationsPage } from '$lib/server/applicationRepository';
+import { APPLICATION_TYPE_CONFIGS, APPLICATION_TYPE_MAP } from '$lib/config/applicationTypes';
 
 const application: TravelApplication = {
 	id: 'TRV-TEST-001',
+	type: 'travel',
+	title: '客户现场支持差旅申请',
+	description: '前往杭州进行客户现场支持',
 	applicant: { id: 'U001', name: '张三', department: '研发部' },
 	approverId: 'U002',
+	formData: {
+		from: '上海',
+		to: '杭州',
+		startDate: '2026-09-12',
+		endDate: '2026-09-14',
+		transport: 'train',
+		estimatedCost: 1200
+	},
 	from: '上海',
 	to: '杭州',
 	startDate: '2026-09-12',
@@ -42,6 +55,10 @@ const input = () => {
 	return {
 		applicant: application.applicant,
 		approverId: application.approverId,
+		type: application.type,
+		title: application.title,
+		description: application.description,
+		formData: application.formData,
 		from: application.from,
 		to: application.to,
 		startDate: offsetDate(1),
@@ -75,6 +92,13 @@ describe('差旅申请校验', () => {
 });
 
 describe('状态流转和统计', () => {
+	it('提供四种预置申请类型配置', () => {
+		expect(APPLICATION_TYPE_CONFIGS.map((item) => item.type)).toEqual(['travel', 'purchase', 'expense', 'overtime']);
+		expect(APPLICATION_TYPE_MAP.purchase.amountField).toBe('budgetAmount');
+		expect(APPLICATION_TYPE_MAP.overtime.amountField).toBeUndefined();
+		expect(APPLICATION_TYPE_MAP.travel.fields.some((field) => field.name === 'estimatedCost')).toBe(true);
+	});
+
 	it('限制状态流转', () => {
 		expect(canTransition('draft', 'pending')).toBe(true);
 		expect(canTransition('approved', 'pending')).toBe(false);
@@ -102,6 +126,14 @@ describe('状态流转和统计', () => {
 		expect(countBySubmittedStatus(applications)).toEqual({ pending: 1, approved: 1, rejected: 1 });
 		expect(countByDepartment(applications)).toEqual({ 研发部: 2, 销售部: 2 });
 		expect(countBySubmittedDepartment(applications)).toEqual({ 研发部: 2, 销售部: 1 });
+		expect(
+			countByApplicationType([
+				...applications,
+				{ ...application, id: 'PUR-TEST-001', type: 'purchase' },
+				{ ...application, id: 'EXP-TEST-001', type: 'expense' },
+				{ ...application, id: 'OVT-TEST-001', type: 'overtime' }
+			])
+		).toEqual({ travel: 4, purchase: 1, expense: 1, overtime: 1 });
 	});
 
 	it('按出发日期归属最近 12 个月的部门趋势并排除草稿', () => {
