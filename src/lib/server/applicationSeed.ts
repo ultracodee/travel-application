@@ -1,6 +1,113 @@
-import type { Application } from '$lib/types/application';
+import type {
+	Application,
+	ApplicationFieldValue,
+	ApplicationStatus,
+	ApplicationType,
+	ApprovalRecord
+} from '$lib/types/application';
 
 const approver = { id: 'U002', name: '李经理', department: '研发部', position: '部门负责人' };
+
+const seedEmployees = [
+	{ id: 'U001', name: '张三', department: '研发部', position: '前端开发' },
+	{ id: 'U003', name: '王芳', department: '市场部', position: '市场专员' },
+	{ id: 'U004', name: '陈敏', department: '客户成功部', position: '客户成功专员' }
+];
+
+const generatedStatuses: ApplicationStatus[] = [
+	'approved',
+	'pending',
+	'rejected',
+	'approved',
+	'pending',
+	'approved',
+	'rejected',
+	'pending',
+	'approved',
+	'draft'
+];
+
+function generatedApplication(type: ApplicationType, index: number): Application {
+	const employee = seedEmployees[index % seedEmployees.length];
+	const month = 10 + index;
+	const year = month > 12 ? 2026 : 2025;
+	const normalizedMonth = month > 12 ? month - 12 : month;
+	const date = `${year}-${String(normalizedMonth).padStart(2, '0')}-${String(8 + (index % 10)).padStart(2, '0')}`;
+	const status = generatedStatuses[index];
+	const idPrefix = type === 'travel' ? 'TRV' : type === 'purchase' ? 'PUR' : type === 'expense' ? 'EXP' : 'OVT';
+	const applicant = { ...employee };
+	const approvalRecords: ApprovalRecord[] =
+		status === 'approved' || status === 'rejected'
+			? [
+					{
+						id: `APR-${idPrefix}-GEN-${index + 1}`,
+						approver: { ...approver },
+						action: status === 'approved' ? 'approved' : 'rejected',
+						comment: status === 'approved' ? '审批通过' : '请补充业务说明',
+						operatedAt: `${date}T15:00:00.000Z`
+					}
+				]
+			: [];
+	const amount = type === 'overtime' ? 0 : 800 + index * 260;
+	const formData: Record<string, ApplicationFieldValue> =
+		type === 'travel'
+			? {
+					from: '上海',
+					to: ['杭州', '北京', '深圳', '成都'][index % 4],
+					startDate: date,
+					endDate: date,
+					transport: index % 2 ? 'flight' : 'train',
+					estimatedCost: amount
+				}
+			: type === 'purchase'
+				? {
+						itemName: ['测试设备', '办公显示器', '客户演示套件'][index % 3],
+						quantity: 1 + (index % 5),
+						budgetAmount: amount,
+						expectedDate: date,
+						purchaseReason: '部门业务开展需要补充物资。',
+						remark: '按部门预算执行。'
+					}
+				: type === 'expense'
+					? {
+							expenseType: index % 2 ? 'transport' : 'office',
+							expenseAmount: amount,
+							expenseDate: date,
+							expenseDescription: '部门日常业务产生的费用。',
+							invoiceAvailable: true,
+							accountLastFour: `${5200 + index}`
+						}
+					: {
+							project: ['版本发布', '客户上线', '专项交付'][index % 3],
+							overtimeDate: date,
+							startTime: '19:00',
+							endTime: '22:00',
+							durationHours: 3,
+							overtimeReason: '保障项目节点按计划完成。',
+							timeOff: index % 2 === 0
+						};
+
+	return {
+		id: `${idPrefix}-GEN-${String(index + 1).padStart(3, '0')}`,
+		type,
+		title: `${applicant.name}${type === 'travel' ? '客户支持出差' : type === 'purchase' ? '部门物资采购' : type === 'expense' ? '业务费用报销' : '项目加班申请'}`,
+		description: '部门日常业务申请。',
+		applicant,
+		approverId: approver.id,
+		formData,
+		from: type === 'travel' ? '上海' : '',
+		to: type === 'travel' ? String(formData.to) : '',
+		startDate: date,
+		endDate: date,
+		reason: '部门日常业务申请。',
+		transport: type === 'travel' ? (formData.transport as Application['transport']) : 'other',
+		estimatedCost: amount,
+		status,
+		approvalRecords,
+		createdAt: `${date}T09:00:00.000Z`,
+		updatedAt: `${date}T15:00:00.000Z`
+	};
+}
 
 export const supplementalApplications: Application[] = [
 	{
@@ -198,5 +305,8 @@ export const supplementalApplications: Application[] = [
 		],
 		createdAt: '2026-08-12T09:00:00.000Z',
 		updatedAt: '2026-08-13T11:00:00.000Z'
-	}
+	},
+	...(['travel', 'purchase', 'expense', 'overtime'] as ApplicationType[]).flatMap((type) =>
+		Array.from({ length: 10 }, (_, index) => generatedApplication(type, index))
+	)
 ];
