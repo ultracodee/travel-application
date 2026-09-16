@@ -30,7 +30,12 @@ describe('apply page', () => {
 		await expect.element(page.getByLabelText('出发地 *')).toBeInTheDocument();
 		await expect.element(page.getByLabelText('返回日期 *')).toBeInTheDocument();
 		const startDate = page.getByLabelText('出发日期 *');
-		await expect.element(startDate).toHaveValue('2026-09-16');
+		const now = new Date();
+		const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(
+			2,
+			'0'
+		)}`;
+		await expect.element(startDate).toHaveValue(today);
 	});
 
 	it('切换申请类型后展示对应业务字段', async () => {

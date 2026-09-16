@@ -115,4 +115,38 @@ describe('applications page', () => {
 		expect(page.getByRole('link', { name: '＋ 新建申请' })).not.toBeInTheDocument();
 		expect(page.getByRole('option', { name: '草稿' })).not.toBeInTheDocument();
 	});
+
+	it('applies status and type filters and requests the first page', async () => {
+		const fetchMock = vi.fn((input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.endsWith('/api/auth')) {
+				return Promise.resolve(
+					new Response(JSON.stringify({ data: { id: 'U001', name: '张三', roles: ['employee'] }, users: [] }))
+				);
+			}
+			return Promise.resolve(
+				new Response(
+					JSON.stringify({
+						data: [draftApplication],
+						pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 }
+					})
+				)
+			);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+		render(ApplicationsPage);
+
+		await expect.element(page.getByRole('heading', { name: '我的申请' })).toBeInTheDocument();
+		await page.getByLabelText('按状态筛选').selectOptions('draft');
+		await page.getByLabelText('按类型筛选').selectOptions('purchase');
+		await page.getByRole('button', { name: '搜索' }).click();
+
+		await expect
+			.poll(() =>
+				fetchMock.mock.calls.some(
+					([input]) => String(input).includes('status=draft') && String(input).includes('type=purchase')
+				)
+			)
+			.toBe(true);
+	});
 });
