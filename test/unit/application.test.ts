@@ -520,4 +520,42 @@ describe('状态流转和统计', () => {
 			sumByMonth(after, new Date(), 'year').data.reduce((total, value) => total + value, 0)
 		).toBeGreaterThanOrEqual(beforeCost + 2600);
 	});
+
+	it('覆盖草稿到驳回、再次提交再到通过的完整状态链路', () => {
+		const employee = users.find((user) => user.id === 'U001')!;
+		const created = createApplication(
+			{
+				...input(),
+				title: '客户成功部现场支持',
+				startDate: offsetDate(2),
+				endDate: offsetDate(3)
+			},
+			employee
+		);
+		expect(created.status).toBe('draft');
+
+		const pending = changeApplicationStatus(created.id, 'pending', employee.id);
+		expect(pending?.status).toBe('pending');
+
+		const rejected = changeApplicationStatus(created.id, 'rejected', 'U002', '请补充客户背景');
+		expect(rejected?.status).toBe('rejected');
+		expect(rejected?.approvalRecords.at(-1)?.comment).toBe('请补充客户背景');
+
+		const edited = updateEditableApplication(
+			created.id,
+			{ ...input(), title: '客户成功部现场支持（已补充背景）' },
+			employee.id
+		);
+		expect(edited?.status).toBe('rejected');
+		expect(edited?.title).toBe('客户成功部现场支持（已补充背景）');
+
+		const resubmitted = changeApplicationStatus(created.id, 'pending', employee.id);
+		expect(resubmitted?.status).toBe('pending');
+		expect(resubmitted?.approvalRecords).toHaveLength(1);
+
+		const approved = changeApplicationStatus(created.id, 'approved', 'U002', '同意');
+		expect(approved?.status).toBe('approved');
+		expect(approved?.approvalRecords).toHaveLength(2);
+		expect(approved?.approvalRecords.at(-1)?.comment).toBe('同意');
+	});
 });
