@@ -16,6 +16,7 @@ import { assertTransition, canTransition } from '$lib/utils/applicationStatus';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
 import { changeApplicationStatus, createApplication, listApplicationsPage } from '$lib/server/applicationRepository';
 import { APPLICATION_TYPE_CONFIGS, APPLICATION_TYPE_MAP } from '$lib/config/applicationTypes';
+import { validateApplicationInput } from '$lib/utils/applicationFormValidation';
 
 const application: TravelApplication = {
 	id: 'TRV-TEST-001',
@@ -88,6 +89,22 @@ describe('差旅申请校验', () => {
 		expect(errors.dateRange).toBe('结束日期不能早于开始日期');
 		expect(errors.reason).toBe('请输入出差事由');
 		expect(errors.estimatedCost).toBe('请输入大于 0 的预计费用');
+	});
+});
+
+describe('通用申请类型校验', () => {
+	it('校验采购申请的类型字段和金额', () => {
+		const errors = validateApplicationInput({
+			...input(),
+			type: 'purchase',
+			title: '设备采购',
+			description: '补充培训设备',
+			formData: { itemName: '', quantity: 0, budgetAmount: 0, expectedDate: '' }
+		});
+		expect(errors.itemName).toBe('请输入采购物品');
+		expect(errors.quantity).toContain('必须大于');
+		expect(errors.budgetAmount).toContain('必须大于');
+		expect(errors.expectedDate).toBe('请输入期望到货日期');
 	});
 });
 

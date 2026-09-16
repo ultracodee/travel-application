@@ -1,6 +1,15 @@
 <script lang="ts">
-	import { TRANSPORT_LABEL, type TransportType, type TravelApplicationInput } from '$lib/types/application';
+	import {
+		TRANSPORT_LABEL,
+		type ApplicationFieldValue,
+		type ApplicationType,
+		type TransportType,
+		type TravelApplicationInput
+	} from '$lib/types/application';
+	import { APPLICATION_TYPE_CONFIGS, APPLICATION_TYPE_MAP } from '$lib/config/applicationTypes';
+	import ApplicationFields from '$lib/components/ApplicationFields.svelte';
 	import { validateTravelApplication, type ValidationErrors } from '$lib/utils/applicationValidation';
+	import { validateApplicationInput } from '$lib/utils/applicationFormValidation';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -11,6 +20,10 @@
 	const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
 	let form = $state<TravelApplicationInput>({
+		type: 'travel',
+		title: '',
+		description: '',
+		formData: {},
 		applicant: {
 			id: 'user-001',
 			name: '张三',
@@ -27,12 +40,11 @@
 		remark: ''
 	});
 
-	let errors = $state<ValidationErrors>({});
+	let errors = $state<ValidationErrors & Record<string, string | undefined>>({});
 	let notice = $state('');
 	let noticeTone = $state<'success' | 'info'>('info');
 	let previewReady = $state(false);
 	let submitting = $state(false);
-	let submittedId = $state('');
 	let draftId = $state('');
 	let canApply = $state(true);
 	onMount(async () => {
@@ -62,13 +74,32 @@
 		}
 	});
 
-	type EditableField = 'from' | 'to' | 'startDate' | 'endDate' | 'reason' | 'transport' | 'estimatedCost' | 'remark';
+	type EditableField =
+		| 'from'
+		| 'to'
+		| 'startDate'
+		| 'endDate'
+		| 'reason'
+		| 'transport'
+		| 'estimatedCost'
+		| 'remark'
+		| 'title'
+		| 'description';
 
 	function updateField(field: EditableField, value: string) {
 		form = {
 			...form,
 			[field]: field === 'estimatedCost' ? (value === '' ? 0 : Number(value)) : value
 		};
+		if (['from', 'to', 'startDate', 'endDate', 'transport', 'estimatedCost'].includes(field)) {
+			form = {
+				...form,
+				formData: {
+					...(form.formData ?? {}),
+					[field]: field === 'estimatedCost' ? (value === '' ? 0 : Number(value)) : value
+				}
+			};
+		}
 		if (errors[field]) {
 			errors = { ...errors, [field]: undefined };
 		}
@@ -79,8 +110,22 @@
 		previewReady = false;
 	}
 
+	function updateFormData(name: string, value: ApplicationFieldValue) {
+		form = { ...form, formData: { ...(form.formData ?? {}), [name]: value } };
+		errors = { ...errors, [name]: undefined };
+		notice = '';
+		previewReady = false;
+	}
+
+	function changeType(type: ApplicationType) {
+		form = { ...form, type, formData: {} };
+		errors = {};
+		notice = '';
+		previewReady = false;
+	}
+
 	function validate() {
-		errors = validateTravelApplication(form);
+		errors = { ...(form.type === 'travel' ? validateTravelApplication(form) : {}), ...validateApplicationInput(form) };
 		return Object.keys(errors).length === 0;
 	}
 
@@ -109,40 +154,15 @@
 		}
 		submitting = true;
 		try {
-			if (draftId) {
-				const update = await fetch(`/api/applications/${draftId}`, {
-					method: 'PUT',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(form)
-				});
-				if (!update.ok) throw new Error('草稿更新失败');
-				const response = await fetch(`/api/applications/${draftId}`, {
-					method: 'PATCH',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ status: 'pending' })
-				});
-				if (!response.ok) throw new Error('提交审批失败');
-				await goto(`/applications/${draftId}`);
-				return;
-			}
-			const response = await fetch('/api/applications', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ ...form, status: 'pending' })
-			});
-			const result = await response.json();
-			if (!response.ok) {
-				errors = result.errors ?? {};
+			const result = await submitAction('submit');
+			if (!result.ok) {
+				errors = result.data?.errors ?? {};
 				noticeTone = 'info';
-				notice = result.message ?? '提交失败，请检查表单。';
+				notice = result.data?.message ?? '提交失败，请检查表单。';
 				previewReady = false;
 				return;
 			}
-			submittedId = result.data.id;
-			noticeTone = 'success';
-			notice = '差旅申请已提交，正在进入申请详情。';
-			previewReady = false;
-			await goto(`/applications/${submittedId}`);
+			if (result.redirected) return;
 		} catch {
 			noticeTone = 'info';
 			notice = '网络异常，暂时无法提交，请稍后重试。';
@@ -159,31 +179,10 @@
 		}
 		submitting = true;
 		try {
-			if (draftId) {
-				const response = await fetch(`/api/applications/${draftId}`, {
-					method: 'PUT',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(form)
-				});
-				if (!response.ok) {
-					const result = await response.json();
-					errors = result.errors ?? {};
-					notice = result.message ?? '草稿保存失败。';
-					noticeTone = 'info';
-					return;
-				}
-				await goto('/applications');
-				return;
-			}
-			const response = await fetch('/api/applications', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ ...form, status: 'draft' })
-			});
-			if (!response.ok) {
-				const result = await response.json();
-				errors = result.errors ?? {};
-				notice = result.message ?? '草稿保存失败。';
+			const result = await submitAction('save');
+			if (!result.ok) {
+				errors = result.data?.errors ?? {};
+				notice = result.data?.message ?? '草稿保存失败。';
 				noticeTone = 'info';
 				return;
 			}
@@ -194,6 +193,19 @@
 		} finally {
 			submitting = false;
 		}
+	}
+
+	async function submitAction(action: 'save' | 'submit') {
+		const payload = new globalThis.FormData();
+		payload.set('payload', JSON.stringify(form));
+		if (draftId) payload.set('id', draftId);
+		const response = await fetch(`?/` + action, { method: 'POST', body: payload });
+		if (response.redirected) {
+			await goto(response.url);
+			return { ok: true, redirected: true, data: null };
+		}
+		const data = await response.json().catch(() => ({}));
+		return { ok: response.ok, redirected: false, data };
 	}
 </script>
 
@@ -256,107 +268,166 @@
 			<section class="panel form-panel">
 				<div class="section-heading">
 					<div>
-						<h2>出行信息</h2>
-						<p>请填写本次差旅的行程与时间安排。</p>
+						<h2>申请基本信息</h2>
+						<p>申请标题和说明适用于所有申请类型。</p>
 					</div>
 				</div>
 				<div class="form-grid">
 					<div class="field">
-						<label for="from">出发地 <span>*</span></label>
+						<label for="application-title">申请标题 <span>*</span></label>
 						<input
-							id="from"
-							placeholder="例如：上海"
-							value={form.from}
-							oninput={(event) => updateField('from', event.currentTarget.value)}
+							id="application-title"
+							placeholder="例如：客户成功部培训设备采购"
+							value={form.title}
+							oninput={(event) => updateField('title', event.currentTarget.value)}
 						/>
-						{#if errors.from}<small class="error">{errors.from}</small>{/if}
+						{#if errors.title}<small class="error">{errors.title}</small>{/if}
 					</div>
 					<div class="field">
-						<label for="to">目的地 <span>*</span></label>
-						<input
-							id="to"
-							placeholder="例如：北京"
-							value={form.to}
-							oninput={(event) => updateField('to', event.currentTarget.value)}
-						/>
-						{#if errors.to}<small class="error">{errors.to}</small>{/if}
-					</div>
-					<div class="field">
-						<label for="start-date">出发日期 <span>*</span></label>
-						<input
-							id="start-date"
-							type="date"
-							min={today}
-							value={form.startDate}
-							onchange={(event) => updateField('startDate', event.currentTarget.value)}
-						/>
-						{#if errors.startDate}<small class="error">{errors.startDate}</small>{/if}
-					</div>
-					<div class="field">
-						<label for="end-date">返回日期 <span>*</span></label>
-						<input
-							id="end-date"
-							type="date"
-							min={form.startDate || today}
-							value={form.endDate}
-							onchange={(event) => updateField('endDate', event.currentTarget.value)}
-						/>
-						{#if errors.endDate}<small class="error">{errors.endDate}</small>{/if}
-						{#if errors.dateRange}<small class="error">{errors.dateRange}</small>{/if}
-					</div>
-					<div class="field">
-						<label for="transport">交通方式 <span>*</span></label>
+						<label for="application-type">申请类型 <span>*</span></label>
 						<select
-							id="transport"
-							value={form.transport}
-							onchange={(event) => updateField('transport', event.currentTarget.value)}
+							id="application-type"
+							value={form.type}
+							onchange={(event) => changeType(event.currentTarget.value as ApplicationType)}
 						>
-							{#each transportOptions as option (option)}
-								<option value={option}>{TRANSPORT_LABEL[option]}</option>
-							{/each}
+							{#each APPLICATION_TYPE_CONFIGS as config (config.type)}<option value={config.type}>{config.label}</option
+								>{/each}
 						</select>
 					</div>
-					<div class="field">
-						<label for="estimated-cost">预计费用 <span>*</span></label>
-						<div class="input-with-suffix">
-							<input
-								id="estimated-cost"
-								type="number"
-								min="0"
-								step="0.01"
-								placeholder="0.00"
-								value={form.estimatedCost || ''}
-								oninput={(event) => updateField('estimatedCost', event.currentTarget.value)}
-							/>
-							<span>元</span>
-						</div>
-						{#if errors.estimatedCost}<small class="error">{errors.estimatedCost}</small>{/if}
-					</div>
 				</div>
 				<div class="field full-width">
-					<label for="reason">出行事由 <span>*</span></label>
+					<label for="application-description">申请说明 <span>*</span></label>
 					<textarea
-						id="reason"
-						rows="4"
-						maxlength="500"
-						placeholder="请说明本次出差的工作目的、客户或项目背景"
-						value={form.reason}
-						oninput={(event) => updateField('reason', event.currentTarget.value)}></textarea>
-					<div class="field-footer">
-						{#if errors.reason}<small class="error">{errors.reason}</small>{:else}<span></span>{/if}
-						<span class="counter">{form.reason.length}/500</span>
-					</div>
-				</div>
-				<div class="field full-width">
-					<label for="remark">备注</label>
-					<textarea
-						id="remark"
+						id="application-description"
 						rows="3"
-						placeholder="其他需要说明的信息（选填）"
-						value={form.remark}
-						oninput={(event) => updateField('remark', event.currentTarget.value)}></textarea>
+						placeholder="请说明申请背景和业务目的"
+						value={form.description}
+						oninput={(event) => updateField('description', event.currentTarget.value)}></textarea>
+					{#if errors.description}<small class="error">{errors.description}</small>{/if}
 				</div>
 			</section>
+
+			{#if form.type !== 'travel'}
+				<section class="panel form-panel">
+					<div class="section-heading">
+						<div>
+							<h2>{APPLICATION_TYPE_MAP[form.type ?? 'travel'].label}信息</h2>
+							<p>{APPLICATION_TYPE_MAP[form.type ?? 'travel'].description}</p>
+						</div>
+					</div>
+					<ApplicationFields
+						fields={APPLICATION_TYPE_MAP[form.type ?? 'travel'].fields}
+						values={form.formData ?? {}}
+						errors={errors as Record<string, string>}
+						onChange={updateFormData}
+					/>
+				</section>
+			{/if}
+
+			{#if form.type === 'travel'}<section class="panel form-panel">
+					<div class="section-heading">
+						<div>
+							<h2>出行信息</h2>
+							<p>请填写本次差旅的行程与时间安排。</p>
+						</div>
+					</div>
+					<div class="form-grid">
+						<div class="field">
+							<label for="from">出发地 <span>*</span></label>
+							<input
+								id="from"
+								placeholder="例如：上海"
+								value={form.from}
+								oninput={(event) => updateField('from', event.currentTarget.value)}
+							/>
+							{#if errors.from}<small class="error">{errors.from}</small>{/if}
+						</div>
+						<div class="field">
+							<label for="to">目的地 <span>*</span></label>
+							<input
+								id="to"
+								placeholder="例如：北京"
+								value={form.to}
+								oninput={(event) => updateField('to', event.currentTarget.value)}
+							/>
+							{#if errors.to}<small class="error">{errors.to}</small>{/if}
+						</div>
+						<div class="field">
+							<label for="start-date">出发日期 <span>*</span></label>
+							<input
+								id="start-date"
+								type="date"
+								min={today}
+								value={form.startDate}
+								onchange={(event) => updateField('startDate', event.currentTarget.value)}
+							/>
+							{#if errors.startDate}<small class="error">{errors.startDate}</small>{/if}
+						</div>
+						<div class="field">
+							<label for="end-date">返回日期 <span>*</span></label>
+							<input
+								id="end-date"
+								type="date"
+								min={form.startDate || today}
+								value={form.endDate}
+								onchange={(event) => updateField('endDate', event.currentTarget.value)}
+							/>
+							{#if errors.endDate}<small class="error">{errors.endDate}</small>{/if}
+							{#if errors.dateRange}<small class="error">{errors.dateRange}</small>{/if}
+						</div>
+						<div class="field">
+							<label for="transport">交通方式 <span>*</span></label>
+							<select
+								id="transport"
+								value={form.transport}
+								onchange={(event) => updateField('transport', event.currentTarget.value)}
+							>
+								{#each transportOptions as option (option)}
+									<option value={option}>{TRANSPORT_LABEL[option]}</option>
+								{/each}
+							</select>
+						</div>
+						<div class="field">
+							<label for="estimated-cost">预计费用 <span>*</span></label>
+							<div class="input-with-suffix">
+								<input
+									id="estimated-cost"
+									type="number"
+									min="0"
+									step="0.01"
+									placeholder="0.00"
+									value={form.estimatedCost || ''}
+									oninput={(event) => updateField('estimatedCost', event.currentTarget.value)}
+								/>
+								<span>元</span>
+							</div>
+							{#if errors.estimatedCost}<small class="error">{errors.estimatedCost}</small>{/if}
+						</div>
+					</div>
+					<div class="field full-width">
+						<label for="reason">出行事由 <span>*</span></label>
+						<textarea
+							id="reason"
+							rows="4"
+							maxlength="500"
+							placeholder="请说明本次出差的工作目的、客户或项目背景"
+							value={form.reason}
+							oninput={(event) => updateField('reason', event.currentTarget.value)}></textarea>
+						<div class="field-footer">
+							{#if errors.reason}<small class="error">{errors.reason}</small>{:else}<span></span>{/if}
+							<span class="counter">{form.reason.length}/500</span>
+						</div>
+					</div>
+					<div class="field full-width">
+						<label for="remark">备注</label>
+						<textarea
+							id="remark"
+							rows="3"
+							placeholder="其他需要说明的信息（选填）"
+							value={form.remark}
+							oninput={(event) => updateField('remark', event.currentTarget.value)}></textarea>
+					</div>
+				</section>{/if}
 
 			{#if notice}
 				<div
