@@ -2,18 +2,26 @@
 	import { onMount } from 'svelte';
 	import {
 		APPLICATION_STATUS_LABEL,
-		TRANSPORT_LABEL,
+		APPLICATION_TYPE_LABEL,
 		type ApplicationStatus,
+		type ApplicationType,
 		type TravelApplication
 	} from '$lib/types/application';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import { getAuthState, hasRole } from '$lib/client/auth';
+	import {
+		getApplicationAmount,
+		getApplicationBusinessDate,
+		getApplicationSummary,
+		getApplicationTypeLabel
+	} from '$lib/utils/applicationDisplay';
 
 	let applications = $state<TravelApplication[]>([]);
 	let loading = $state(true);
 	let keyword = $state('');
 	let status = $state<'all' | ApplicationStatus>('all');
+	let type = $state<'all' | ApplicationType>('all');
 	let isApprover = $state(false);
 	let deletingId = $state('');
 	let page = $state(1);
@@ -35,6 +43,7 @@
 			page: String(page),
 			pageSize: String(pageSize),
 			status,
+			type,
 			keyword
 		});
 		try {
@@ -74,12 +83,12 @@
 	}
 </script>
 
-<svelte:head><title>{isApprover ? '审批管理' : '我的申请'} - 差旅管理</title></svelte:head>
+<svelte:head><title>{isApprover ? '审批管理' : '我的申请'} - 申请管理</title></svelte:head>
 
 <div class="page-heading">
 	<div>
 		<h1>{isApprover ? '审批管理' : '我的申请'}</h1>
-		<p>{isApprover ? '查看并处理全部员工的差旅申请。' : '查看我提交的差旅申请。'}</p>
+		<p>{isApprover ? '查看并处理全部员工的申请。' : '查看我提交的申请。'}</p>
 	</div>
 	{#if !isApprover}<a class="primary-button" href="/apply">＋ 新建申请</a>{/if}
 </div>
@@ -100,6 +109,10 @@
 					value={key}>{label}</option
 				>{/each}
 		</select>
+		<select aria-label="按类型筛选" bind:value={type} onchange={applyFilters}>
+			<option value="all">全部类型</option>
+			{#each Object.entries(APPLICATION_TYPE_LABEL) as [key, label] (key)}<option value={key}>{label}</option>{/each}
+		</select>
 		<button class="filter-button" type="button" onclick={applyFilters}>搜索</button>
 	</div>
 	{#if loading}
@@ -107,27 +120,31 @@
 	{:else if applications.length === 0}
 		<div class="empty">
 			<div class="empty-icon">▤</div>
-			<strong>暂无匹配申请</strong><span>可以新建一条差旅申请。</span>
+			<strong>暂无匹配申请</strong><span>可以新建一条申请。</span>
 		</div>
 	{:else}
 		<div class="table-wrap">
 			<table>
 				<thead
 					><tr
-						><th>申请编号</th><th>申请人</th><th>行程</th><th>出行日期</th><th>交通方式</th><th>预计费用</th><th
+						><th>申请编号</th><th>申请类型</th><th>申请人</th><th>申请摘要</th><th>业务日期</th><th>预计金额</th><th
 							>状态</th
-						><th></th></tr
+						><th>操作</th></tr
 					></thead
 				>
 				<tbody>
 					{#each applications as item (item.id)}
 						<tr>
 							<td><a class="id-link" href={`/applications/${item.id}`}>{item.id}</a></td>
+							<td><strong>{getApplicationTypeLabel(item)}</strong><small>{item.title}</small></td>
 							<td><strong>{item.applicant.name}</strong><small>{item.applicant.department}</small></td>
-							<td>{item.from} → {item.to}</td>
-							<td>{item.startDate}<br /><span class="muted">至 {item.endDate}</span></td>
-							<td>{TRANSPORT_LABEL[item.transport]}</td>
-							<td>¥ {item.estimatedCost.toFixed(2)}</td>
+							<td>{getApplicationSummary(item)}</td>
+							<td>{getApplicationBusinessDate(item)}</td>
+							<td
+								>{#if getApplicationAmount(item) !== undefined}¥ {getApplicationAmount(item)?.toFixed(2)}{:else}<span
+										class="muted">—</span
+									>{/if}</td
+							>
 							<td><StatusBadge status={item.status} /></td>
 							<td>
 								<div class="row-actions">

@@ -1,6 +1,10 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { getCurrentUser, hasRole } from '$lib/server/auth';
-import { changeApplicationStatus, createApplication, updateDraft } from '$lib/server/applicationRepository';
+import {
+	changeApplicationStatus,
+	createApplication,
+	updateEditableApplication
+} from '$lib/server/applicationRepository';
 import { validateApplicationInput } from '$lib/utils/applicationFormValidation';
 import type { TravelApplicationInput } from '$lib/types/application';
 
@@ -35,7 +39,7 @@ export const actions = {
 			if (Object.keys(errors).length > 0) return fail(400, { message: '表单校验失败', errors });
 			const id = formDataId(formData);
 			if (id) {
-				updateDraft(id, input, user.id);
+				updateEditableApplication(id, input, user.id);
 			} else {
 				createApplication(input, user);
 			}
@@ -55,7 +59,7 @@ export const actions = {
 			const errors = validateApplicationInput(input);
 			if (Object.keys(errors).length > 0) return fail(400, { message: '表单校验失败', errors });
 			const id = formDataId(formData);
-			const application = id ? updateDraft(id, input, user.id) : createApplication(input, user);
+			const application = id ? updateEditableApplication(id, input, user.id) : createApplication(input, user);
 			if (!application) return fail(404, { message: '申请不存在' });
 			changeApplicationStatus(application.id, 'pending', user.id);
 			throw redirect(303, `/applications/${application.id}`);

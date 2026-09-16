@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import {
-		APPLICATION_STATUS_LABEL,
-		TRANSPORT_LABEL,
-		type ApplicationStatus,
-		type TravelApplication
-	} from '$lib/types/application';
+	import { APPLICATION_STATUS_LABEL, type ApplicationStatus, type TravelApplication } from '$lib/types/application';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { getAuthState, hasRole } from '$lib/client/auth';
+	import {
+		getApplicationAmount,
+		getApplicationFieldEntries,
+		getApplicationSummary,
+		getApplicationTypeLabel
+	} from '$lib/utils/applicationDisplay';
 
 	let application = $state<TravelApplication | null>(null);
 	let loading = $state(true);
@@ -49,7 +50,7 @@
 	}
 </script>
 
-<svelte:head><title>申请详情 - 差旅管理</title></svelte:head>
+<svelte:head><title>申请详情 - 申请管理</title></svelte:head>
 
 <div class="page-heading">
 	<div>
@@ -70,10 +71,12 @@
 		<div class="detail-header">
 			<div>
 				<StatusBadge status={application.status} />
-				<h2>{application.from} → {application.to}</h2>
-				<p>{application.startDate} 至 {application.endDate} · {TRANSPORT_LABEL[application.transport]}</p>
+				<h2>{application.title}</h2>
+				<p>{getApplicationTypeLabel(application)} · {getApplicationSummary(application)}</p>
 			</div>
-			<div class="cost">¥ {application.estimatedCost.toFixed(2)}<small>预计费用</small></div>
+			{#if getApplicationAmount(application) !== undefined}
+				<div class="cost">¥ {getApplicationAmount(application)?.toFixed(2)}<small>预计金额</small></div>
+			{/if}
 		</div>
 		<div class="info-grid">
 			<div><span>申请人</span><strong>{application.applicant.name}</strong></div>
@@ -82,7 +85,10 @@
 					>{application.applicant.department} / {application.applicant.position ?? '—'}</strong
 				>
 			</div>
-			<div class="wide"><span>出行事由</span><strong>{application.reason}</strong></div>
+			<div class="wide"><span>申请说明</span><strong>{application.description || '—'}</strong></div>
+			{#each getApplicationFieldEntries(application) as field (field.label)}
+				<div><span>{field.label}</span><strong>{field.value}</strong></div>
+			{/each}
 			{#if application.remark}<div class="wide"><span>备注</span><strong>{application.remark}</strong></div>{/if}
 		</div>
 	</section>
@@ -106,27 +112,26 @@
 			</div>
 		{/if}
 	</section>
-	{#if (isApprover && (application.status === 'pending' || application.status === 'rejected')) || (isApplicant && application.status === 'draft')}
+	{#if (isApprover && application.status === 'pending') || (isApplicant && ['draft', 'rejected'].includes(application.status))}
 		<section class="panel action-panel">
 			{#if isApprover}
 				<h2>处理申请</h2>
 				<textarea rows="3" placeholder="填写审批意见（可选）" bind:value={comment}></textarea>
 			{:else}
-				<h2>提交申请</h2>
-				<p class="submit-hint">草稿已保存，确认无误后即可提交审批。</p>
+				<h2>{application.status === 'rejected' ? '修改申请' : '提交申请'}</h2>
+				<p class="submit-hint">
+					{application.status === 'rejected'
+						? '申请已驳回，请修改后重新提交审批。'
+						: '草稿已保存，确认无误后即可提交审批。'}
+				</p>
 			{/if}
 			<div class="actions">
-				{#if isApplicant && application.status === 'draft'}<button
-						class="primary-button"
-						disabled={acting}
-						onclick={() => changeStatus('pending')}>确认提交审批</button
-					>{/if}
-				{#if isApprover && application.status === 'rejected'}<button
-						class="primary-button"
-						disabled={acting}
-						onclick={() => changeStatus('pending')}>重新提交审批</button
-					>{/if}
-				{#if application.status === 'pending'}<button
+				{#if isApplicant && ['draft', 'rejected'].includes(application.status)}
+					<a class="primary-button" href={`/apply?id=${application.id}`}
+						>{application.status === 'rejected' ? '编辑并重新提交' : '编辑并提交审批'}</a
+					>
+				{/if}
+				{#if isApprover && application.status === 'pending'}<button
 						class="danger-button"
 						disabled={acting}
 						onclick={() => changeStatus('rejected')}>驳回</button

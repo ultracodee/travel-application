@@ -8,15 +8,18 @@
 		createCostOption,
 		createDepartmentOption,
 		createDepartmentTrendOption,
-		createStatusOption
+		createStatusOption,
+		createApplicationTypeOption
 	} from '$lib/utils/statisticsOptions';
 	import { getAuthState, hasRole } from '$lib/client/auth';
+	import { getApplicationAmount } from '$lib/utils/applicationDisplay';
 
 	let isApprover = $state(false);
 	let loading = $state(true);
 	let selectedRange = $state<StatisticsRange>('year');
 	let submittedApplications = $state<TravelApplication[]>([]);
 	let statusCounts = $state({ pending: 0, approved: 0, rejected: 0 });
+	let typeCounts = $state({ travel: 0, purchase: 0, expense: 0, overtime: 0 });
 	let departmentCounts = $state<Record<string, number>>({});
 	let monthlyTrend = $state({ months: [] as string[], series: [] as { department: string; data: number[] }[] });
 	let monthlyCost = $state({ months: [] as string[], data: [] as number[] });
@@ -26,8 +29,14 @@
 	let approvalRate = $state(0);
 	let currentMonth = $derived(monthlyTrend.months.at(-1) ?? '');
 	let currentMonthCount = $derived(monthlyTrend.series.reduce((sum, item) => sum + (item.data.at(-1) ?? 0), 0));
+	let amountApplications = $derived(submittedApplications.filter((item) => getApplicationAmount(item) !== undefined));
+	let averageAmount = $derived(amountApplications.length ? totalCost / amountApplications.length : 0);
+	let maxAmount = $derived(
+		amountApplications.length ? Math.max(...amountApplications.map((item) => getApplicationAmount(item) ?? 0)) : 0
+	);
 
 	let statusOption = $derived(createStatusOption(statusCounts));
+	let typeOption = $derived(createApplicationTypeOption(typeCounts));
 	let departmentOption = $derived(createDepartmentOption(departmentCounts));
 	let trendOption = $derived(createDepartmentTrendOption(monthlyTrend));
 	let costOption = $derived(createCostOption(monthlyCost));
@@ -39,6 +48,7 @@
 			const payload = (await response.json()).data;
 			submittedApplications = payload.applications;
 			statusCounts = payload.statusCounts;
+			typeCounts = payload.typeCounts;
 			departmentCounts = payload.departmentCounts;
 			monthlyTrend = payload.monthlyTrend;
 			monthlyCost = payload.monthlyCost;
@@ -61,11 +71,11 @@
 	});
 </script>
 
-<svelte:head><title>数据统计 - 差旅管理</title></svelte:head>
+<svelte:head><title>数据统计 - 申请管理</title></svelte:head>
 <div class="page-heading">
 	<div>
 		<h1>数据统计</h1>
-		<p>从申请量、审批状态和费用趋势了解各部门出差情况。</p>
+		<p>从申请量、审批状态和金额趋势了解各部门申请情况。</p>
 	</div>
 	<select class="range-select" aria-label="统计时间范围" bind:value={selectedRange}
 		><option value="year">最近一年</option><option value="halfYear">最近半年</option><option value="quarter"
@@ -75,38 +85,34 @@
 </div>
 {#if loading}<section class="panel loading">正在加载统计数据…</section>
 {:else if !isApprover}<section class="panel denied">
-		<strong>数据统计仅对审批人开放</strong><span>请切换到李经理账号查看差旅统计。</span>
+		<strong>数据统计仅对审批人开放</strong><span>请切换到李经理账号查看申请统计。</span>
 	</section>
 {:else}<section class="metric-grid">
 		<MetricCard label="已提交申请" value={totalSubmitted} hint="不含草稿" />
 		<MetricCard
 			label={`${currentMonth.slice(0, 4)}年${currentMonth.slice(5)}月申请`}
 			value={currentMonthCount}
-			hint="按出发日期统计"
+			hint="按业务日期统计"
 		/>
 		<MetricCard label="审批通过率" value={`${approvalRate}%`} hint="仅统计已完成审批" />
-		<MetricCard label="总预计费用" value={`¥ ${totalCost.toLocaleString()}`} hint="已提交申请预计费用" />
+		<MetricCard label="金额合计" value={`¥ ${totalCost.toLocaleString()}`} hint="仅统计有金额字段的申请" />
 	</section>
 	<section class="panel insight">
 		<h2>费用概览</h2>
 		<div>
-			<span>平均预计费用</span><strong>¥ {totalSubmitted ? (totalCost / totalSubmitted).toFixed(2) : '0.00'}</strong>
+			<span>平均申请金额</span><strong>¥ {averageAmount.toFixed(2)}</strong>
 		</div>
 		<div>
-			<span>最高单笔费用</span><strong
-				>¥ {totalSubmitted
-					? Math.max(...submittedApplications.map((item) => item.estimatedCost)).toFixed(2)
-					: '0.00'}</strong
-			>
+			<span>最高单笔费用</span><strong>¥ {maxAmount.toFixed(2)}</strong>
 		</div>
 		<div><span>完成审批量</span><strong>{completedCount}</strong></div>
 	</section>
 	<section class="panel trend-card">
 		<div class="card-heading">
 			<div>
-				<h2>部门月度出差趋势</h2>
+				<h2>部门月度申请趋势</h2>
 				<p>
-					按出发日期所在月份统计，{selectedRange === 'currentYear'
+					按业务日期所在月份统计，{selectedRange === 'currentYear'
 						? '今年'
 						: selectedRange === 'halfYear'
 							? '最近 6 个月'
@@ -117,13 +123,13 @@
 			</div>
 			<span>堆叠申请单量 · 不含草稿</span>
 		</div>
-		{#key selectedRange}<EChart option={trendOption} height="350px" ariaLabel="部门月度出差趋势堆叠柱状图" />{/key}
+		{#key selectedRange}<EChart option={trendOption} height="350px" ariaLabel="部门月度申请趋势堆叠柱状图" />{/key}
 	</section>
 	<section class="panel cost-card">
 		<div class="card-heading">
 			<div>
 				<h2>月度预计费用</h2>
-				<p>按出发月份汇总所选范围内已提交申请的预计费用</p>
+				<p>按业务日期月份汇总所选范围内有金额字段的申请</p>
 			</div>
 			<span>人民币</span>
 		</div>
@@ -136,6 +142,13 @@
 				<span>所选范围 · 已提交申请</span>
 			</div>
 			{#key selectedRange}<EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" />{/key}
+		</div>
+		<div class="panel chart-card">
+			<div class="card-heading">
+				<h2>申请类型分布</h2>
+				<span>所选范围 · 已提交申请</span>
+			</div>
+			{#key selectedRange}<EChart option={typeOption} height="280px" ariaLabel="申请类型分布环形图" />{/key}
 		</div>
 		<div class="panel chart-card">
 			<div class="card-heading">

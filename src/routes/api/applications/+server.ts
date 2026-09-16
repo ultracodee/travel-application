@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { createApplication, getApplicationsForUser, listApplicationsPage } from '$lib/server/applicationRepository';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
-import type { ApplicationStatus, TravelApplicationInput } from '$lib/types/application';
+import { validateApplicationInput } from '$lib/utils/applicationFormValidation';
+import type { ApplicationStatus, ApplicationType, TravelApplicationInput } from '$lib/types/application';
 import { getCurrentUser, hasRole } from '$lib/server/auth';
 import { approver } from '$lib/server/applicationRepository';
 
@@ -16,6 +17,10 @@ function parsePositiveInt(value: string | null): number | undefined {
 function parseStatus(value: string | null): 'all' | ApplicationStatus {
 	return statusValues.includes(value as 'all' | ApplicationStatus) ? (value as 'all' | ApplicationStatus) : 'all';
 }
+function parseType(value: string | null): 'all' | ApplicationType {
+	const values: Array<'all' | ApplicationType> = ['all', 'travel', 'purchase', 'expense', 'overtime'];
+	return values.includes(value as 'all' | ApplicationType) ? (value as 'all' | ApplicationType) : 'all';
+}
 
 export function GET({ cookies, url }) {
 	const user = getCurrentUser(cookies);
@@ -24,18 +29,20 @@ export function GET({ cookies, url }) {
 	const page = parsePositiveInt(url.searchParams.get('page'));
 	const pageSize = parsePositiveInt(url.searchParams.get('pageSize'));
 	const status = parseStatus(url.searchParams.get('status'));
+	const type = parseType(url.searchParams.get('type'));
 	const keyword = url.searchParams.get('keyword') ?? '';
 	const excludeDraft = hasRole(user, 'approver');
 	const applicantId = hasRole(user, 'approver') ? undefined : user.id;
 	const visibleApplications = getApplicationsForUser(user);
 
-	if (page || pageSize || keyword || status !== 'all') {
+	if (page || pageSize || keyword || status !== 'all' || type !== 'all') {
 		return json(
 			listApplicationsPage({
 				page,
 				pageSize,
 				keyword,
 				status,
+				type,
 				applicantId,
 				excludeDraft,
 				applications: visibleApplications
@@ -56,7 +63,10 @@ export async function POST({ request, cookies }) {
 		if (!['draft', 'pending'].includes(status)) {
 			return json({ message: '不支持的创建状态' }, { status: 400 });
 		}
-		const errors = validateTravelApplication(input);
+		const errors = {
+			...((input.type ?? 'travel') === 'travel' ? validateTravelApplication(input) : {}),
+			...validateApplicationInput(input)
+		};
 
 		if (Object.keys(errors).length > 0) {
 			return json({ message: '表单校验失败', errors }, { status: 400 });

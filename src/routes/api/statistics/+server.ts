@@ -3,6 +3,7 @@ import { getCurrentUser, hasRole } from '$lib/server/auth';
 import { getApplicationsForUser } from '$lib/server/applicationRepository';
 import {
 	countBySubmittedDepartment,
+	countBySubmittedApplicationType,
 	countBySubmittedStatus,
 	countByDepartmentMonthlyTrend,
 	filterApplicationsByRange,
@@ -24,8 +25,9 @@ export function GET({ cookies, url }) {
 	const departmentCounts = countBySubmittedDepartment(applications);
 	const monthlyTrend = countByDepartmentMonthlyTrend(applications, new Date(), range);
 	const monthlyCost = sumByMonth(applications, new Date(), range);
+	const typeCounts = countBySubmittedApplicationType(applications);
 	const totalSubmitted = applications.length;
-	const totalCost = applications.reduce((sum, item) => sum + item.estimatedCost, 0);
+	const totalCost = monthlyCost.data.reduce((sum, amount) => sum + amount, 0);
 	const completedCount = statusCounts.approved + statusCounts.rejected;
 
 	return json({
@@ -33,6 +35,7 @@ export function GET({ cookies, url }) {
 			applications,
 			statusCounts,
 			departmentCounts,
+			typeCounts,
 			monthlyTrend,
 			monthlyCost,
 			totalSubmitted,

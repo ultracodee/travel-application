@@ -242,9 +242,26 @@ describe('状态流转和统计', () => {
 		expect(
 			sumByMonth(
 				[
-					{ ...application, estimatedCost: 1000, startDate: '2026-09-01' },
-					{ ...application, estimatedCost: 2000, startDate: '2026-09-15', status: 'approved' as const },
-					{ ...application, estimatedCost: 9000, startDate: '2026-09-20', status: 'draft' as const }
+					{
+						...application,
+						estimatedCost: 1000,
+						formData: { ...application.formData, estimatedCost: 1000 },
+						startDate: '2026-09-01'
+					},
+					{
+						...application,
+						estimatedCost: 2000,
+						formData: { ...application.formData, estimatedCost: 2000 },
+						startDate: '2026-09-15',
+						status: 'approved' as const
+					},
+					{
+						...application,
+						estimatedCost: 9000,
+						formData: { ...application.formData, estimatedCost: 9000 },
+						startDate: '2026-09-20',
+						status: 'draft' as const
+					}
 				],
 				'2026-09-10'
 			).data.at(-1)

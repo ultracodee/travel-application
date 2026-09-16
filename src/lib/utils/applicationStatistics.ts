@@ -1,4 +1,5 @@
 import type { TravelApplication, ApplicationStatus, ApplicationType } from '$lib/types/application';
+import { getApplicationAmount, getApplicationBusinessDate } from './applicationDisplay';
 
 export type SubmittedApplicationStatus = Exclude<ApplicationStatus, 'draft'>;
 
@@ -16,6 +17,10 @@ export function countByApplicationType(applications: TravelApplication[]): Recor
 	const counts: Record<ApplicationType, number> = { travel: 0, purchase: 0, expense: 0, overtime: 0 };
 	for (const application of applications) counts[application.type] += 1;
 	return counts;
+}
+
+export function countBySubmittedApplicationType(applications: TravelApplication[]): Record<ApplicationType, number> {
+	return countByApplicationType(getSubmittedApplications(applications));
 }
 
 export type StatisticsRange = 'year' | 'halfYear' | 'quarter' | 'currentYear';
@@ -93,7 +98,9 @@ export function filterApplicationsByRange(
 	range: StatisticsRange = 'year'
 ): TravelApplication[] {
 	const months = new Set(getMonthsByRange(referenceDate, range));
-	return getSubmittedApplications(applications).filter((application) => months.has(application.startDate.slice(0, 7)));
+	return getSubmittedApplications(applications).filter((application) =>
+		months.has(getApplicationBusinessDate(application).slice(0, 7))
+	);
 }
 
 export function countByDepartmentMonthlyTrend(
@@ -109,7 +116,7 @@ export function countByDepartmentMonthlyTrend(
 	const values = new Map<string, number[]>();
 
 	for (const application of getSubmittedApplications(applications)) {
-		const month = application.startDate.slice(0, 7);
+		const month = getApplicationBusinessDate(application).slice(0, 7);
 		const index = monthIndex.get(month);
 		if (index === undefined) continue;
 
@@ -140,8 +147,9 @@ export function sumByMonth(
 	const data = Array.from({ length: months.length }, () => 0);
 
 	for (const application of getSubmittedApplications(applications)) {
-		const index = monthIndex.get(application.startDate.slice(0, 7));
-		if (index !== undefined) data[index] += application.estimatedCost;
+		const index = monthIndex.get(getApplicationBusinessDate(application).slice(0, 7));
+		const amount = getApplicationAmount(application);
+		if (index !== undefined && amount !== undefined) data[index] += amount;
 	}
 
 	return { months, data };

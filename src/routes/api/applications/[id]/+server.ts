@@ -1,8 +1,14 @@
 import { error, json } from '@sveltejs/kit';
-import { changeApplicationStatus, deleteDraft, findApplication, updateDraft } from '$lib/server/applicationRepository';
+import {
+	changeApplicationStatus,
+	deleteDraft,
+	findApplication,
+	updateEditableApplication
+} from '$lib/server/applicationRepository';
 import type { ApplicationStatus, TravelApplicationInput } from '$lib/types/application';
 import { getCurrentUser, hasRole } from '$lib/server/auth';
 import { validateTravelApplication } from '$lib/utils/applicationValidation';
+import { validateApplicationInput } from '$lib/utils/applicationFormValidation';
 
 export function GET({ params, cookies }) {
 	const user = getCurrentUser(cookies);
@@ -29,7 +35,7 @@ export async function PATCH({ params, request, cookies }) {
 		}
 		if (body.status === 'pending') {
 			if (applicationOwner(params.id, user.id) === false) {
-				return json({ message: '只有申请人可以提交自己的草稿' }, { status: 403 });
+				return json({ message: '只有申请人可以提交自己的申请' }, { status: 403 });
 			}
 		} else if (!hasRole(user, 'approver')) {
 			return json({ message: '当前用户没有审批权限' }, { status: 403 });
@@ -54,9 +60,12 @@ export async function PUT({ params, request, cookies }) {
 		const user = getCurrentUser(cookies);
 		if (!user) return json({ message: '请先登录' }, { status: 401 });
 		const input = (await request.json()) as TravelApplicationInput;
-		const errors = validateTravelApplication(input);
+		const errors = {
+			...((input.type ?? 'travel') === 'travel' ? validateTravelApplication(input) : {}),
+			...validateApplicationInput(input)
+		};
 		if (Object.keys(errors).length > 0) return json({ message: '表单校验失败', errors }, { status: 400 });
-		const application = updateDraft(params.id, input, user.id);
+		const application = updateEditableApplication(params.id, input, user.id);
 		if (!application) throw error(404, '申请不存在');
 		return json({ data: application });
 	} catch (cause) {

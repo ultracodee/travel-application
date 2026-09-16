@@ -5,6 +5,9 @@ import StatisticsPage from '../../src/routes/statistics/+page.svelte';
 
 const application = {
 	id: 'TRV-TEST-STAT-001',
+	type: 'travel',
+	title: '客户现场支持',
+	description: '客户现场支持',
 	applicant: { id: 'U001', name: '张三', department: '研发部' },
 	approverId: 'U002',
 	from: '上海',
@@ -42,6 +45,7 @@ describe('statistics page', () => {
 							data: {
 								applications: [application],
 								statusCounts: { pending: 0, approved: 1, rejected: 0 },
+								typeCounts: { travel: 1, purchase: 0, expense: 0, overtime: 0 },
 								departmentCounts: { 研发部: 1 },
 								monthlyTrend: { months: ['2026-09'], series: [{ department: '研发部', data: [1] }] },
 								monthlyCost: { months: ['2026-09'], data: [1200] },
@@ -63,7 +67,7 @@ describe('statistics page', () => {
 		render(StatisticsPage);
 		await expect.element(page.getByText('数据统计')).toBeInTheDocument();
 		await expect.element(page.getByLabelText('统计时间范围')).toBeInTheDocument();
-		await expect.element(page.getByText('部门月度出差趋势')).toBeInTheDocument();
+		await expect.element(page.getByText('部门月度申请趋势')).toBeInTheDocument();
 		await expect.element(page.getByText('月度预计费用')).toBeInTheDocument();
 	});
 });

@@ -15,6 +15,7 @@ export interface ApplicationListQuery {
 	pageSize?: number;
 	keyword?: string;
 	status?: 'all' | ApplicationStatus;
+	type?: 'all' | ApplicationType;
 	applicantId?: string;
 	excludeDraft?: boolean;
 	applications?: TravelApplication[];
@@ -522,11 +523,12 @@ export function listApplicationsPage(query: ApplicationListQuery): PaginatedAppl
 		const matchedApplicant = !query.applicantId || application.applicant.id === query.applicantId;
 		const matchedDraft = !query.excludeDraft || application.status !== 'draft';
 		const matchedStatus = !query.status || query.status === 'all' || application.status === query.status;
+		const matchedType = !query.type || query.type === 'all' || application.type === query.type;
 		const searchableText =
 			`${application.id} ${application.type} ${application.title} ${application.description} ${application.applicant.name} ${application.applicant.department} ${application.from} ${application.to}`.toLowerCase();
 		const matchedKeyword = !keyword || searchableText.includes(keyword);
 
-		return matchedApplicant && matchedDraft && matchedStatus && matchedKeyword;
+		return matchedApplicant && matchedDraft && matchedStatus && matchedType && matchedKeyword;
 	});
 
 	const total = filtered.length;
@@ -586,7 +588,31 @@ export function updateDraft(id: string, input: TravelApplicationInput, actorId: 
 	if (!application) return undefined;
 	if (application.status !== 'draft') throw new Error('只有草稿可以编辑');
 	if (application.applicant.id !== actorId) throw new Error('只能编辑自己的草稿');
-	Object.assign(application, { ...input, applicant: { ...application.applicant }, updatedAt: now() });
+	return applyEditableApplication(application, input);
+}
+
+export function updateEditableApplication(
+	id: string,
+	input: TravelApplicationInput,
+	actorId: string
+): TravelApplication | undefined {
+	const application = findApplication(id);
+	if (!application) return undefined;
+	if (!['draft', 'rejected'].includes(application.status)) throw new Error('只有草稿或已驳回申请可以编辑');
+	if (application.applicant.id !== actorId) throw new Error('只能编辑自己的申请');
+	return applyEditableApplication(application, input);
+}
+
+function applyEditableApplication(application: TravelApplication, input: TravelApplicationInput): TravelApplication {
+	Object.assign(application, {
+		...input,
+		type: input.type ?? application.type,
+		title: input.title ?? application.title,
+		description: input.description ?? input.reason,
+		formData: input.formData ?? application.formData,
+		applicant: { ...application.applicant },
+		updatedAt: now()
+	});
 	return application;
 }
 
@@ -612,7 +638,7 @@ export function changeApplicationStatus(
 		if (application.applicant.id === actorId) throw new Error('申请人不能审批自己的申请');
 		if (application.approverId !== actorId) throw new Error('当前用户不是该申请的指定审批人');
 	} else if (application.applicant.id !== actorId) {
-		throw new Error('只有申请人可以提交自己的草稿');
+		throw new Error('只有申请人可以提交自己的申请');
 	}
 
 	assertTransition(application.status, status);

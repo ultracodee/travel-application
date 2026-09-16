@@ -14,6 +14,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { getAuthState, hasRole } from '$lib/client/auth';
+	import { getApplicationAmountFromForm, getApplicationFieldEntriesFromForm } from '$lib/utils/applicationDisplay';
 
 	const transportOptions: TransportType[] = ['train', 'flight', 'car', 'other'];
 	const now = new Date();
@@ -23,9 +24,16 @@
 		type: 'travel',
 		title: '',
 		description: '',
-		formData: {},
+		formData: {
+			from: '',
+			to: '',
+			startDate: today,
+			endDate: '',
+			transport: 'train',
+			estimatedCost: 0
+		},
 		applicant: {
-			id: 'user-001',
+			id: 'U001',
 			name: '张三',
 			department: '研发部',
 			position: '前端开发'
@@ -46,7 +54,11 @@
 	let previewReady = $state(false);
 	let submitting = $state(false);
 	let draftId = $state('');
+	let editStatus = $state<'draft' | 'rejected' | ''>('');
 	let canApply = $state(true);
+	let activeConfig = $derived(APPLICATION_TYPE_MAP[form.type ?? 'travel']);
+	let previewFields = $derived(getApplicationFieldEntriesFromForm(form.type, form.formData ?? {}));
+	let previewAmount = $derived(getApplicationAmountFromForm(form.type, form.formData ?? {}, form.estimatedCost));
 	onMount(async () => {
 		const auth = await getAuthState();
 		canApply = !hasRole(auth.data, 'approver');
@@ -56,10 +68,15 @@
 			const draftResponse = await fetch(`/api/applications/${id}`);
 			if (draftResponse.ok) {
 				const result = await draftResponse.json();
-				if (result.data.status === 'draft') {
+				if (['draft', 'rejected'].includes(result.data.status) && result.data.applicant.id === auth.data?.id) {
 					draftId = result.data.id;
+					editStatus = result.data.status;
 					form = {
+						type: result.data.type,
+						title: result.data.title,
+						description: result.data.description,
 						applicant: result.data.applicant,
+						formData: result.data.formData ?? {},
 						from: result.data.from,
 						to: result.data.to,
 						startDate: result.data.startDate,
@@ -118,7 +135,21 @@
 	}
 
 	function changeType(type: ApplicationType) {
-		form = { ...form, type, formData: {} };
+		form = {
+			...form,
+			type,
+			formData:
+				type === 'travel'
+					? {
+							from: form.from,
+							to: form.to,
+							startDate: form.startDate,
+							endDate: form.endDate,
+							transport: form.transport,
+							estimatedCost: form.estimatedCost
+						}
+					: {}
+		};
 		errors = {};
 		notice = '';
 		previewReady = false;
@@ -174,7 +205,7 @@
 	async function saveDraft() {
 		if (!validate()) {
 			noticeTone = 'info';
-			notice = '请先完善申请人、行程和日期等必填信息后保存草稿。';
+			notice = '请先完善申请人和申请类型对应的必填信息后保存草稿。';
 			return;
 		}
 		submitting = true;
@@ -210,12 +241,12 @@
 </script>
 
 <svelte:head>
-	<title>发起差旅申请 - 差旅管理</title>
+	<title>发起申请 - 申请管理</title>
 </svelte:head>
 
 <div class="page-heading">
 	<div>
-		<h1>发起差旅申请</h1>
+		<h1>{draftId ? (editStatus === 'rejected' ? '修改驳回申请' : '编辑草稿申请') : '发起申请'}</h1>
 		<p>填写申请信息，确认无误后进入预览。</p>
 	</div>
 	<div class="step-indicator" aria-label="申请流程">
@@ -229,7 +260,7 @@
 
 {#if !canApply}
 	<section class="panel denied">
-		<strong>专职审批角色无需发起申请</strong><span>请使用员工账号提交差旅申请。</span>
+		<strong>专职审批角色无需发起申请</strong><span>请使用员工账号提交申请。</span>
 	</section>
 {:else}
 	{#if !previewReady}
@@ -311,12 +342,12 @@
 				<section class="panel form-panel">
 					<div class="section-heading">
 						<div>
-							<h2>{APPLICATION_TYPE_MAP[form.type ?? 'travel'].label}信息</h2>
-							<p>{APPLICATION_TYPE_MAP[form.type ?? 'travel'].description}</p>
+							<h2>{activeConfig.label}信息</h2>
+							<p>{activeConfig.description}</p>
 						</div>
 					</div>
 					<ApplicationFields
-						fields={APPLICATION_TYPE_MAP[form.type ?? 'travel'].fields}
+						fields={activeConfig.fields}
 						values={form.formData ?? {}}
 						errors={errors as Record<string, string>}
 						onChange={updateFormData}
@@ -458,11 +489,18 @@
 			</div>
 			<div class="preview-grid">
 				<div><span>申请人</span><strong>{form.applicant.name} · {form.applicant.department}</strong></div>
-				<div><span>出行路线</span><strong>{form.from} → {form.to}</strong></div>
-				<div><span>出行日期</span><strong>{form.startDate} 至 {form.endDate}</strong></div>
-				<div><span>交通方式</span><strong>{TRANSPORT_LABEL[form.transport]}</strong></div>
-				<div><span>预计费用</span><strong>¥ {form.estimatedCost.toFixed(2)}</strong></div>
-				<div class="preview-full"><span>出行事由</span><strong>{form.reason}</strong></div>
+				<div><span>申请类型</span><strong>{activeConfig.label}</strong></div>
+				<div class="preview-full"><span>申请标题</span><strong>{form.title}</strong></div>
+				<div class="preview-full"><span>申请说明</span><strong>{form.description}</strong></div>
+				{#each previewFields as field (field.label)}
+					<div><span>{field.label}</span><strong>{field.value}</strong></div>
+				{/each}
+				{#if previewAmount !== undefined}
+					<div><span>预计金额</span><strong>¥ {previewAmount.toFixed(2)}</strong></div>
+				{/if}
+				{#if form.type === 'travel'}<div class="preview-full">
+						<span>出行事由</span><strong>{form.reason}</strong>
+					</div>{/if}
 				{#if form.remark}<div class="preview-full"><span>备注</span><strong>{form.remark}</strong></div>{/if}
 			</div>
 			<div class="preview-actions">

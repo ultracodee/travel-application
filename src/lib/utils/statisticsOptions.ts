@@ -1,5 +1,10 @@
 import type { EChartsOption } from 'echarts';
-import { APPLICATION_STATUS_LABEL, type ApplicationStatus } from '$lib/types/application';
+import {
+	APPLICATION_STATUS_LABEL,
+	APPLICATION_TYPE_LABEL,
+	type ApplicationStatus,
+	type ApplicationType
+} from '$lib/types/application';
 import type { DepartmentMonthlyTrend, MonthlyTrend } from './applicationStatistics';
 
 const statusColors: Record<Exclude<ApplicationStatus, 'draft'>, string> = {
@@ -8,6 +13,33 @@ const statusColors: Record<Exclude<ApplicationStatus, 'draft'>, string> = {
 	rejected: '#d65b68'
 };
 const departmentColors = ['#3975f6', '#e6b83f', '#36ae73'];
+const typeColors: Record<ApplicationType, string> = {
+	travel: '#3975f6',
+	purchase: '#e6b83f',
+	expense: '#36ae73',
+	overtime: '#8b7cf6'
+};
+
+export function createApplicationTypeOption(counts: Record<ApplicationType, number>): EChartsOption {
+	return {
+		tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+		legend: { bottom: 0, icon: 'circle', textStyle: { color: '#68758b', fontSize: 12 } },
+		series: [
+			{
+				type: 'pie',
+				radius: ['48%', '72%'],
+				center: ['50%', '44%'],
+				itemStyle: { borderColor: '#fff', borderWidth: 3 },
+				label: { show: false },
+				data: (Object.keys(APPLICATION_TYPE_LABEL) as ApplicationType[]).map((type) => ({
+					name: APPLICATION_TYPE_LABEL[type],
+					value: counts[type],
+					itemStyle: { color: typeColors[type] }
+				}))
+			}
+		]
+	};
+}
 
 export function createStatusOption(counts: Record<Exclude<ApplicationStatus, 'draft'>, number>): EChartsOption {
 	return {

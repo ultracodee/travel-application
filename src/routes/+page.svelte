@@ -4,6 +4,7 @@
 	import { countByStatus } from '$lib/utils/applicationStatistics';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { getAuthState, hasRole } from '$lib/client/auth';
+	import { getApplicationAmount, getApplicationSummary, getApplicationTypeLabel } from '$lib/utils/applicationDisplay';
 
 	let applications = $state<TravelApplication[]>([]);
 	let isApprover = $state(false);
@@ -17,14 +18,14 @@
 	let recent = $derived(applications.slice(0, 4));
 </script>
 
-<svelte:head><title>工作台 - 差旅管理</title></svelte:head>
+<svelte:head><title>工作台 - 申请管理</title></svelte:head>
 
 <div class="page-heading">
 	<div>
 		<h1>工作台</h1>
-		<p>欢迎回来，快速了解差旅申请处理情况。</p>
+		<p>欢迎回来，快速了解申请处理情况。</p>
 	</div>
-	{#if !isApprover}<a class="primary-button" href="/apply">＋ 发起差旅申请</a>{/if}
+	{#if !isApprover}<a class="primary-button" href="/apply">＋ 发起申请</a>{/if}
 </div>
 
 <section class="metrics">
@@ -41,7 +42,7 @@
 	<div class="section-title">
 		<div>
 			<h2>最近申请</h2>
-			<p>最新提交的差旅申请记录</p>
+			<p>最新提交的申请记录</p>
 		</div>
 		<a href="/applications">查看全部 →</a>
 	</div>
@@ -50,10 +51,13 @@
 			{#each recent as item (item.id)}
 				<a class="recent-item" href={`/applications/${item.id}`}
 					><div class="route">
-						<strong>{item.from} → {item.to}</strong><span>{item.id} · {item.applicant.name}</span>
+						<strong>{getApplicationTypeLabel(item)} · {item.title}</strong><span
+							>{item.id} · {item.applicant.name} · {getApplicationSummary(item)}</span
+						>
 					</div>
 					<div class="recent-meta">
-						<span>¥ {item.estimatedCost.toFixed(2)}</span><StatusBadge status={item.status} />
+						{#if getApplicationAmount(item) !== undefined}<span>¥ {getApplicationAmount(item)?.toFixed(2)}</span
+							>{/if}<StatusBadge status={item.status} />
 					</div></a
 				>
 			{/each}

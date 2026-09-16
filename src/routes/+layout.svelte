@@ -43,15 +43,15 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>差旅申请管理</title>
-	<meta name="description" content="企业差旅申请与审批管理系统" />
+	<title>通用申请管理</title>
+	<meta name="description" content="企业通用申请与审批管理系统" />
 </svelte:head>
 
 <div class="app-shell">
 	<aside class:open={mobileMenuOpen} class="sidebar">
 		<div class="brand">
 			<div class="brand-mark">旅</div>
-			<div><strong>TravelFlow</strong><span>差旅申请管理</span></div>
+			<div><strong>TravelFlow</strong><span>通用申请管理</span></div>
 		</div>
 
 		<nav aria-label="主导航">
@@ -86,7 +86,7 @@
 	<div class="main-area">
 		<header class="topbar">
 			<button class="menu-button" aria-label="打开导航" onclick={() => (mobileMenuOpen = true)}>☰</button>
-			<div class="topbar-title"><span>企业服务中心</span><strong>差旅申请管理</strong></div>
+			<div class="topbar-title"><span>企业服务中心</span><strong>通用申请管理</strong></div>
 			<div class="topbar-actions">
 				<div class="header-user">
 					<strong>{currentUser?.name ?? '未登录'}</strong><span
