@@ -31,7 +31,11 @@ const application = {
 	updatedAt: '2026-09-01T00:00:00.000Z'
 };
 
-function mockFetch(user: { id: string; name: string; roles: string[] }, patchResponse = application) {
+function mockFetch(
+	user: { id: string; name: string; roles: string[] },
+	responseApplication = application,
+	patchResponse = responseApplication
+) {
 	vi.stubGlobal(
 		'fetch',
 		vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -42,7 +46,7 @@ function mockFetch(user: { id: string; name: string; roles: string[] }, patchRes
 			if (init?.method === 'PATCH') {
 				return Promise.resolve(new Response(JSON.stringify({ data: patchResponse })));
 			}
-			return Promise.resolve(new Response(JSON.stringify({ data: application })));
+			return Promise.resolve(new Response(JSON.stringify({ data: responseApplication })));
 		})
 	);
 }
@@ -65,12 +69,34 @@ describe('application detail page', () => {
 	});
 
 	it('审批人可以处理审批中申请并看到成功提示', async () => {
-		mockFetch({ id: 'U002', name: '李经理', roles: ['approver'] }, { ...application, status: 'approved' });
+		mockFetch({ id: 'U002', name: '李经理', roles: ['approver'] }, application, { ...application, status: 'approved' });
 		render(ApplicationDetailPage);
 
 		await expect.element(page.getByRole('button', { name: '通过' })).toBeInTheDocument();
 		await expect.element(page.getByRole('button', { name: '驳回' })).toBeInTheDocument();
 		await page.getByRole('button', { name: '通过' }).click();
 		await expect.element(page.getByText('已通过')).toBeInTheDocument();
+	});
+
+	it('员工查看驳回申请时可以进入编辑并重新提交', async () => {
+		const rejected = { ...application, status: 'rejected' };
+		mockFetch({ id: 'U001', name: '张三', roles: ['employee'] }, rejected);
+		render(ApplicationDetailPage);
+
+		await expect.element(page.getByRole('heading', { name: '修改申请' })).toBeInTheDocument();
+		await expect
+			.element(page.getByRole('link', { name: '编辑并重新提交' }))
+			.toHaveAttribute('href', `/apply?id=${application.id}`);
+		expect(page.getByRole('button', { name: '通过' })).not.toBeInTheDocument();
+		expect(page.getByRole('button', { name: '驳回' })).not.toBeInTheDocument();
+	});
+
+	it('审批人驳回申请时可以填写审批意见并看到驳回提示', async () => {
+		mockFetch({ id: 'U002', name: '李经理', roles: ['approver'] }, application, { ...application, status: 'rejected' });
+		render(ApplicationDetailPage);
+
+		await page.getByPlaceholder('填写审批意见（可选）').fill('请补充预算说明');
+		await page.getByRole('button', { name: '驳回' }).click();
+		await expect.element(page.getByText('已驳回')).toBeInTheDocument();
 	});
 });
