@@ -32,7 +32,10 @@ function generatedApplication(type: ApplicationType, index: number): Application
 	const month = 10 + index;
 	const year = month > 12 ? 2026 : 2025;
 	const normalizedMonth = month > 12 ? month - 12 : month;
-	const date = `${year}-${String(normalizedMonth).padStart(2, '0')}-${String(8 + (index % 10)).padStart(2, '0')}`;
+	const recentDates = ['2026-09-05', '2026-09-04', '2026-08-28', '2026-08-20'];
+	const date =
+		recentDates[index] ??
+		`${year}-${String(normalizedMonth).padStart(2, '0')}-${String(8 + (index % 10)).padStart(2, '0')}`;
 	const status = generatedStatuses[index];
 	const idPrefix = type === 'travel' ? 'TRV' : type === 'purchase' ? 'PUR' : type === 'expense' ? 'EXP' : 'OVT';
 	const applicant = { ...employee };
