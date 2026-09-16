@@ -22,71 +22,28 @@
 	);
 </script>
 
-<div class="pagination" aria-label="分页导航">
-	<div class="summary">第 {from}-{to} 条 / 共 {total} 条</div>
-	<div class="controls">
+<div
+	class="flex items-center justify-between gap-4 pt-4 text-xs text-[#7b879a] max-[620px]:items-start max-[620px]:flex-col"
+	aria-label="分页导航"
+>
+	<div>第 {from}-{to} 条 / 共 {total} 条</div>
+	<div class="flex items-center gap-1.5 max-[620px]:flex-wrap">
 		<button type="button" disabled={page <= 1} onclick={() => onPageChange(page - 1)}>上一页</button>
 		{#each pageNumbers as item, index (item)}
 			{#if index > 0 && item - pageNumbers[index - 1] > 1}<span class="ellipsis">…</span>{/if}
 			<button
+				class={`h-8 min-w-8 rounded-lg border px-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${item === page ? 'border-[#3975f6] bg-[#eef4ff] text-[#3975f6]' : 'border-[#dfe5ee] bg-white text-[#44516a] hover:border-[#3975f6] hover:bg-[#eef4ff] hover:text-[#3975f6]'}`}
 				type="button"
 				class:active={item === page}
 				aria-current={item === page ? 'page' : undefined}
 				onclick={() => onPageChange(item)}>{item}</button
 			>
 		{/each}
-		<button type="button" disabled={page >= totalPages} onclick={() => onPageChange(page + 1)}>下一页</button>
+		<button
+			class="h-8 min-w-8 rounded-lg border border-[#dfe5ee] bg-white px-2.5 text-xs font-semibold text-[#44516a] transition-colors hover:border-[#3975f6] hover:bg-[#eef4ff] hover:text-[#3975f6] disabled:cursor-not-allowed disabled:opacity-50"
+			type="button"
+			disabled={page >= totalPages}
+			onclick={() => onPageChange(page + 1)}>下一页</button
+		>
 	</div>
 </div>
-
-<style>
-	.pagination {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 16px;
-		padding-top: 16px;
-		color: #7b879a;
-		font-size: 12px;
-	}
-	.controls {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-	}
-	button {
-		min-width: 32px;
-		height: 32px;
-		padding: 0 10px;
-		border: 1px solid #dfe5ee;
-		border-radius: 8px;
-		background: white;
-		color: #44516a;
-		font-size: 12px;
-		font-weight: 650;
-		cursor: pointer;
-	}
-	button:hover:not(:disabled),
-	button.active {
-		border-color: #3975f6;
-		color: #3975f6;
-		background: #eef4ff;
-	}
-	button:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-	.ellipsis {
-		padding: 0 4px;
-		color: #9aa4b5;
-	}
-	@media (max-width: 620px) {
-		.pagination {
-			align-items: flex-start;
-			flex-direction: column;
-		}
-		.controls {
-			flex-wrap: wrap;
-		}
-	}
-</style>

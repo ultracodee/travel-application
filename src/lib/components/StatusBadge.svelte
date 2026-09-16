@@ -4,31 +4,14 @@
 	let { status }: { status: ApplicationStatus } = $props();
 </script>
 
-<span class={`status status-${status}`}>{APPLICATION_STATUS_LABEL[status]}</span>
-
-<style>
-	.status {
-		display: inline-flex;
-		padding: 5px 9px;
-		border-radius: 999px;
-		font-size: 11px;
-		font-style: normal;
-		font-weight: 650;
-	}
-	.status-draft {
-		color: #667085;
-		background: #f0f2f5;
-	}
-	.status-pending {
-		color: #946b16;
-		background: #fff5d8;
-	}
-	.status-approved {
-		color: #237a52;
-		background: #e8f8ef;
-	}
-	.status-rejected {
-		color: #b54855;
-		background: #ffedf0;
-	}
-</style>
+<span
+	class={`status-${status} inline-flex rounded-full px-[9px] py-[5px] text-[11px] font-semibold ${
+		status === 'draft'
+			? 'bg-[#f0f2f5] text-[#667085]'
+			: status === 'pending'
+				? 'bg-[#fff5d8] text-[#946b16]'
+				: status === 'approved'
+					? 'bg-[#e8f8ef] text-[#237a52]'
+					: 'bg-[#ffedf0] text-[#b54855]'
+	}`}>{APPLICATION_STATUS_LABEL[status]}</span
+>
