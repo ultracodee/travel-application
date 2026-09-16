@@ -517,15 +517,28 @@ export function getApplicationsForUser(user: User): TravelApplication[] {
 export function listApplicationsPage(query: ApplicationListQuery): PaginatedApplications {
 	const page = Math.max(1, query.page ?? 1);
 	const pageSize = Math.min(50, Math.max(1, query.pageSize ?? 10));
-	const keyword = query.keyword?.trim().toLowerCase() ?? '';
+	const keyword = String(query.keyword ?? '')
+		.trim()
+		.toLowerCase();
 
 	const filtered = (query.applications ?? listApplications()).filter((application) => {
 		const matchedApplicant = !query.applicantId || application.applicant.id === query.applicantId;
 		const matchedDraft = !query.excludeDraft || application.status !== 'draft';
 		const matchedStatus = !query.status || query.status === 'all' || application.status === query.status;
 		const matchedType = !query.type || query.type === 'all' || application.type === query.type;
-		const searchableText =
-			`${application.id} ${application.type} ${application.title} ${application.description} ${application.applicant.name} ${application.applicant.department} ${application.from} ${application.to}`.toLowerCase();
+		const searchableText = [
+			application.id,
+			application.type,
+			application.title,
+			application.description,
+			application.applicant?.name,
+			application.applicant?.department,
+			application.from,
+			application.to
+		]
+			.map((value) => String(value ?? ''))
+			.join(' ')
+			.toLowerCase();
 		const matchedKeyword = !keyword || searchableText.includes(keyword);
 
 		return matchedApplicant && matchedDraft && matchedStatus && matchedType && matchedKeyword;
