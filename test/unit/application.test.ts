@@ -485,4 +485,39 @@ describe('状态流转和统计', () => {
 			)
 		).toBe(true);
 	});
+
+	it('覆盖员工提交、审批通过到统计聚合的完整业务链路', () => {
+		const employee = users.find((user) => user.id === 'U004')!;
+		const before = filterApplicationsByRange(listApplications(), new Date(), 'year');
+		const beforeApproved = countBySubmittedStatus(before).approved;
+		const beforeCost = sumByMonth(before, new Date(), 'year').data.reduce((total, value) => total + value, 0);
+		const created = createApplication(
+			{
+				...input(),
+				type: 'travel',
+				title: '客户成功现场支持',
+				startDate: offsetDate(1),
+				endDate: offsetDate(2),
+				estimatedCost: 2600,
+				formData: {
+					from: '上海',
+					to: '杭州',
+					startDate: offsetDate(1),
+					endDate: offsetDate(2),
+					transport: 'train',
+					estimatedCost: 2600
+				}
+			},
+			employee
+		);
+		expect(created.status).toBe('draft');
+		expect(changeApplicationStatus(created.id, 'pending', employee.id)?.status).toBe('pending');
+		expect(changeApplicationStatus(created.id, 'approved', 'U002')?.status).toBe('approved');
+
+		const after = filterApplicationsByRange(listApplications(), new Date(), 'year');
+		expect(countBySubmittedStatus(after).approved).toBe(beforeApproved + 1);
+		expect(
+			sumByMonth(after, new Date(), 'year').data.reduce((total, value) => total + value, 0)
+		).toBeGreaterThanOrEqual(beforeCost + 2600);
+	});
 });
