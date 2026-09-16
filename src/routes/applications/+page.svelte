@@ -253,6 +253,13 @@
 		color: #9aa4b5;
 		font-size: 11px;
 	}
+	th:nth-child(4),
+	td:nth-child(4) {
+		width: 180px;
+		max-width: 180px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 	.id-link,
 	.detail-link {
 		color: #3975f6;
