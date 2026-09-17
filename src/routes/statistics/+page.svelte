@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import ChartCard from '$lib/components/ChartCard.svelte';
 	import EChart from '$lib/components/EChart.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import Panel from '$lib/components/Panel.svelte';
 	import type { TravelApplication } from '$lib/types/application';
 	import type { StatisticsRange } from '$lib/utils/applicationStatistics';
 	import {
@@ -72,11 +76,7 @@
 </script>
 
 <svelte:head><title>数据统计 - 申请管理</title></svelte:head>
-<div class="page-heading">
-	<div>
-		<h1>数据统计</h1>
-		<p>从申请量、审批状态和金额趋势了解各部门申请情况。</p>
-	</div>
+<PageHeader title="数据统计" description="从申请量、审批状态和金额趋势了解各部门申请情况。">
 	<select
 		class="h-10 min-w-32 rounded-lg border border-[#dfe5ee] bg-white px-3 text-[#44516a] outline-none focus:border-[#3975f6] focus:shadow-[0_0_0_3px_#3975f61c]"
 		aria-label="统计时间范围"
@@ -85,16 +85,11 @@
 			>最近三月</option
 		><option value="currentYear">今年</option></select
 	>
-</div>
-{#if loading}<section class="panel grid min-h-[220px] place-content-center justify-items-center gap-2 text-[#8a95a8]">
-		正在加载统计数据…
-	</section>
-{:else if !isApprover}<section
-		class="panel grid min-h-[220px] place-content-center justify-items-center gap-2 text-[#8a95a8]"
-	>
-		<strong class="text-base text-[#44516a]">数据统计仅对审批人开放</strong><span>请切换到李经理账号查看申请统计。</span
-		>
-	</section>
+</PageHeader>
+{#if loading}<Panel><EmptyState description="正在加载统计数据…" /></Panel>
+{:else if !isApprover}<Panel>
+		<EmptyState title="数据统计仅对审批人开放" description="请切换到李经理账号查看申请统计。" />
+	</Panel>
 {:else}<section class="mb-[18px] grid grid-cols-4 gap-3.5 max-[900px]:grid-cols-2 max-[430px]:grid-cols-1">
 		<MetricCard label="已提交申请" value={totalSubmitted} hint="不含草稿" />
 		<MetricCard
@@ -105,8 +100,8 @@
 		<MetricCard label="审批通过率" value={`${approvalRate}%`} hint="仅统计已完成审批" />
 		<MetricCard label="金额合计" value={`¥ ${totalCost.toLocaleString()}`} hint="仅统计有金额字段的申请" />
 	</section>
-	<section
-		class="panel mb-[18px] grid grid-cols-[1.2fr_repeat(3,1fr)] items-center gap-[18px] px-6 py-[22px] max-[700px]:grid-cols-2 max-[430px]:grid-cols-1"
+	<Panel
+		class="mb-[18px] grid grid-cols-[1.2fr_repeat(3,1fr)] items-center gap-[18px] px-6 py-[22px] max-[700px]:grid-cols-2 max-[430px]:grid-cols-1"
 	>
 		<h2 class="m-0 text-[17px] max-[700px]:col-span-full max-[430px]:col-auto">费用概览</h2>
 		<div
@@ -130,56 +125,39 @@
 				>{completedCount}</strong
 			>
 		</div>
-	</section>
-	<section class="panel mb-[18px] p-6">
-		<div class="flex items-start justify-between gap-4">
-			<div>
-				<h2 class="m-0 text-[17px]">部门月度申请趋势</h2>
-				<p class="mt-[7px] mb-0 text-xs text-[#9aa4b5]">
-					按业务日期所在月份统计，{selectedRange === 'currentYear'
-						? '今年'
-						: selectedRange === 'halfYear'
-							? '最近 6 个月'
-							: selectedRange === 'quarter'
-								? '最近 3 个月'
-								: '最近 12 个月'}
-				</p>
-			</div>
-			<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">堆叠申请单量 · 不含草稿</span>
-		</div>
+	</Panel>
+	<ChartCard
+		title="部门月度申请趋势"
+		description={`按业务日期所在月份统计，${
+			selectedRange === 'currentYear'
+				? '今年'
+				: selectedRange === 'halfYear'
+					? '最近 6 个月'
+					: selectedRange === 'quarter'
+						? '最近 3 个月'
+						: '最近 12 个月'
+		}`}
+		meta="堆叠申请单量 · 不含草稿"
+	>
 		{#key selectedRange}<EChart option={trendOption} height="350px" ariaLabel="部门月度申请趋势堆叠柱状图" />{/key}
-	</section>
-	<section class="panel mb-[18px] px-6 pt-6 pb-[18px]">
-		<div class="flex items-start justify-between gap-4">
-			<div>
-				<h2 class="m-0 text-[17px]">月度预计费用</h2>
-				<p class="mt-[7px] mb-0 text-xs text-[#9aa4b5]">按业务日期月份汇总所选范围内有金额字段的申请</p>
-			</div>
-			<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">人民币</span>
-		</div>
+	</ChartCard>
+	<ChartCard
+		title="月度预计费用"
+		description="按业务日期月份汇总所选范围内有金额字段的申请"
+		meta="人民币"
+		class="pt-6 pb-[18px]"
+	>
 		{#key selectedRange}<EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" />{/key}
-	</section>
+	</ChartCard>
 	<section class="mb-[18px] grid grid-cols-2 gap-[18px] max-[700px]:grid-cols-1">
-		<div class="panel min-h-[340px] p-6">
-			<div class="flex items-start justify-between gap-4">
-				<h2 class="m-0 text-[17px]">申请状态分布</h2>
-				<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">所选范围 · 已提交申请</span>
-			</div>
+		<ChartCard title="申请状态分布" meta="所选范围 · 已提交申请" class="min-h-[340px]">
 			{#key selectedRange}<EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" />{/key}
-		</div>
-		<div class="panel min-h-[340px] p-6">
-			<div class="flex items-start justify-between gap-4">
-				<h2 class="m-0 text-[17px]">申请类型分布</h2>
-				<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">所选范围 · 已提交申请</span>
-			</div>
+		</ChartCard>
+		<ChartCard title="申请类型分布" meta="所选范围 · 已提交申请" class="min-h-[340px]">
 			{#key selectedRange}<EChart option={typeOption} height="280px" ariaLabel="申请类型分布环形图" />{/key}
-		</div>
-		<div class="panel min-h-[340px] p-6">
-			<div class="flex items-start justify-between gap-4">
-				<h2 class="m-0 text-[17px]">部门申请单量</h2>
-				<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">所选范围 · 已提交申请</span>
-			</div>
+		</ChartCard>
+		<ChartCard title="部门申请单量" meta="所选范围 · 已提交申请" class="min-h-[340px]">
 			{#key selectedRange}<EChart option={departmentOption} height="280px" ariaLabel="部门申请单量柱状图" />{/key}
-		</div>
+		</ChartCard>
 	</section>
 {/if}

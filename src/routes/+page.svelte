@@ -3,6 +3,10 @@
 	import { type TravelApplication } from '$lib/types/application';
 	import { countByStatus } from '$lib/utils/applicationStatistics';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import Panel from '$lib/components/Panel.svelte';
+	import SectionHeading from '$lib/components/SectionHeading.svelte';
 	import { getAuthState, hasRole } from '$lib/client/auth';
 	import { getApplicationAmount, getApplicationSummary, getApplicationTypeLabel } from '$lib/utils/applicationDisplay';
 
@@ -20,34 +24,26 @@
 
 <svelte:head><title>工作台 - 申请管理</title></svelte:head>
 
-<div class="page-heading">
-	<div>
-		<h1>工作台</h1>
-		<p>欢迎回来，快速了解申请处理情况。</p>
-	</div>
+<PageHeader title="工作台" description="欢迎回来，快速了解申请处理情况。">
 	{#if !isApprover}<a class="primary-button" href="/apply">＋ 发起申请</a>{/if}
-</div>
+</PageHeader>
 
 <section class="mb-[18px] grid grid-cols-1 gap-4 min-[521px]:grid-cols-2 min-[801px]:grid-cols-4">
 	{#each [{ label: '全部申请', value: applications.length, tone: 'text-[#3975f6]' }, { label: '待审批', value: counts.pending, tone: 'text-[#d49b28]' }, { label: '已通过', value: counts.approved, tone: 'text-[#2eaa70]' }, { label: '已驳回', value: counts.rejected, tone: 'text-[#d45c68]' }] as metric (metric.label)}
-		<div class="panel !p-5">
+		<Panel class="!p-5">
 			<span class="block text-xs text-[#8a95a8]">{metric.label}</span>
 			<strong class={`my-3 block text-[28px] ${metric.tone}`}>{metric.value}</strong>
 			<small class="block text-[11px] text-[#a4adbb]">较上月保持稳定</small>
-		</div>
+		</Panel>
 	{/each}
 </section>
 
-<section class="panel !px-6 !py-[22px]">
-	<div class="mb-3 flex items-start justify-between gap-4">
-		<div>
-			<h2 class="m-0 text-[17px]">最近申请</h2>
-			<p class="mt-1.5 mb-0 text-xs text-[#8a95a8]">最新提交的申请记录</p>
-		</div>
+<Panel class="!px-6 !py-[22px]">
+	<SectionHeading title="最近申请" description="最新提交的申请记录" class="mb-3">
 		<a class="text-xs font-semibold text-[#3975f6]" href="/applications">查看全部 →</a>
-	</div>
+	</SectionHeading>
 	{#if recent.length === 0}
-		<div class="grid min-h-[160px] place-content-center text-center text-[13px] text-[#8a95a8]">暂无申请记录</div>
+		<EmptyState description="暂无申请记录" class="min-h-[160px] text-center" />
 	{:else}
 		<div class="grid">
 			{#each recent as item (item.id)}
@@ -69,4 +65,4 @@
 			{/each}
 		</div>
 	{/if}
-</section>
+</Panel>
