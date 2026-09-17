@@ -28,13 +28,17 @@
 >
 	<div>第 {from}-{to} 条 / 共 {total} 条</div>
 	<div class="flex items-center gap-1.5 max-[620px]:flex-wrap">
-		<button type="button" disabled={page <= 1} onclick={() => onPageChange(page - 1)}>上一页</button>
+		<button
+			class="h-8 rounded-lg border border-[#dfe5ee] bg-white px-2.5 text-xs font-semibold text-[#44516a] transition-colors hover:border-[#3975f6] hover:bg-[#eef4ff] hover:text-[#3975f6] disabled:cursor-not-allowed disabled:opacity-50"
+			type="button"
+			disabled={page <= 1}
+			onclick={() => onPageChange(page - 1)}>上一页</button
+		>
 		{#each pageNumbers as item, index (item)}
-			{#if index > 0 && item - pageNumbers[index - 1] > 1}<span class="ellipsis">…</span>{/if}
+			{#if index > 0 && item - pageNumbers[index - 1] > 1}<span class="px-1 text-[#9aa4b5]">…</span>{/if}
 			<button
 				class={`h-8 min-w-8 rounded-lg border px-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${item === page ? 'border-[#3975f6] bg-[#eef4ff] text-[#3975f6]' : 'border-[#dfe5ee] bg-white text-[#44516a] hover:border-[#3975f6] hover:bg-[#eef4ff] hover:text-[#3975f6]'}`}
 				type="button"
-				class:active={item === page}
 				aria-current={item === page ? 'page' : undefined}
 				onclick={() => onPageChange(item)}>{item}</button
 			>

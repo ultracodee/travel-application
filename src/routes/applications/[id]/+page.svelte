@@ -61,48 +61,74 @@
 </div>
 
 {#if loading}
-	<section class="panel empty">正在加载申请详情…</section>
+	<section class="panel grid min-h-[240px] place-content-center justify-items-center gap-4 text-[#8a95a8]">
+		正在加载申请详情…
+	</section>
 {:else if errorMessage}
-	<section class="panel empty">
+	<section class="panel grid min-h-[240px] place-content-center justify-items-center gap-4 text-[#8a95a8]">
 		<strong>{errorMessage}</strong><a class="primary-button" href="/applications">返回申请列表</a>
 	</section>
 {:else if application}
-	<section class="panel detail-panel">
-		<div class="detail-header">
+	<section class="panel mb-[18px] px-7 py-[26px] max-[620px]:px-[18px] max-[620px]:py-[21px]">
+		<div class="flex justify-between gap-5 border-b border-[#edf0f5] pb-[22px] max-[620px]:flex-col">
 			<div>
 				<StatusBadge status={application.status} />
-				<h2>{application.title}</h2>
-				<p>{getApplicationTypeLabel(application)} · {getApplicationSummary(application)}</p>
+				<h2 class="my-3 mb-1.5 text-[22px]">{application.title}</h2>
+				<p class="m-0 text-[13px] text-[#8a95a8]">
+					{getApplicationTypeLabel(application)} · {getApplicationSummary(application)}
+				</p>
 			</div>
 			{#if getApplicationAmount(application) !== undefined}
-				<div class="cost">¥ {getApplicationAmount(application)?.toFixed(2)}<small>预计金额</small></div>
+				<div class="text-right text-2xl font-bold text-[#3975f6] max-[620px]:text-left">
+					¥ {getApplicationAmount(application)?.toFixed(2)}<small
+						class="mt-1 block text-[11px] font-normal text-[#9aa4b5]">预计金额</small
+					>
+				</div>
 			{/if}
 		</div>
-		<div class="info-grid">
-			<div><span>申请人</span><strong>{application.applicant.name}</strong></div>
+		<div class="grid grid-cols-2 gap-5 pt-[22px] max-[620px]:grid-cols-1 [&_div]:grid [&_div]:gap-[7px]">
 			<div>
-				<span>部门 / 职位</span><strong
+				<span class="text-xs text-[#8a95a8]">申请人</span><strong class="text-sm leading-[1.6] text-[#34415a]"
+					>{application.applicant.name}</strong
+				>
+			</div>
+			<div>
+				<span class="text-xs text-[#8a95a8]">部门 / 职位</span><strong class="text-sm leading-[1.6] text-[#34415a]"
 					>{application.applicant.department} / {application.applicant.position ?? '—'}</strong
 				>
 			</div>
-			<div class="wide"><span>申请说明</span><strong>{application.description || '—'}</strong></div>
+			<div class="col-span-full max-[620px]:col-auto">
+				<span class="text-xs text-[#8a95a8]">申请说明</span><strong class="text-sm leading-[1.6] text-[#34415a]"
+					>{application.description || '—'}</strong
+				>
+			</div>
 			{#each getApplicationFieldEntries(application) as field (field.label)}
-				<div><span>{field.label}</span><strong>{field.value}</strong></div>
+				<div>
+					<span class="text-xs text-[#8a95a8]">{field.label}</span><strong class="text-sm leading-[1.6] text-[#34415a]"
+						>{field.value}</strong
+					>
+				</div>
 			{/each}
-			{#if application.remark}<div class="wide"><span>备注</span><strong>{application.remark}</strong></div>{/if}
+			{#if application.remark}<div class="col-span-full max-[620px]:col-auto">
+					<span class="text-xs text-[#8a95a8]">备注</span><strong class="text-sm leading-[1.6] text-[#34415a]"
+						>{application.remark}</strong
+					>
+				</div>{/if}
 		</div>
 	</section>
-	<section class="panel detail-panel">
-		<div class="section-title">
-			<h2>审批记录</h2>
-			<span>{application.approvalRecords.length} 条记录</span>
+	<section class="panel mb-[18px] px-7 py-[26px] max-[620px]:px-[18px] max-[620px]:py-[21px]">
+		<div class="flex items-center justify-between">
+			<h2 class="m-0 text-[17px]">审批记录</h2>
+			<span class="text-xs text-[#8a95a8]">{application.approvalRecords.length} 条记录</span>
 		</div>
-		{#if application.approvalRecords.length === 0}<p class="muted">暂无审批记录</p>{:else}
-			<div class="timeline">
-				{#each application.approvalRecords as record (record.id)}<div class="record">
-						<span class="dot"></span>
+		{#if application.approvalRecords.length === 0}<p class="text-[13px] text-[#8a95a8]">暂无审批记录</p>{:else}
+			<div class="mt-5 grid gap-[18px]">
+				{#each application.approvalRecords as record (record.id)}<div class="flex items-start gap-3">
+						<span class="mt-[5px] size-[9px] rounded-full bg-[#3975f6]"></span>
 						<div>
-							<strong>{record.approver.name} · {record.action === 'approved' ? '通过' : '驳回'}</strong><small
+							<strong class="block text-[13px] text-[#34415a]"
+								>{record.approver.name} · {record.action === 'approved' ? '通过' : '驳回'}</strong
+							><small class="mt-[5px] block text-xs text-[#8a95a8]"
 								>{record.operatedAt}
 								{#if record.comment}
 									· {record.comment}{/if}</small
@@ -113,19 +139,23 @@
 		{/if}
 	</section>
 	{#if (isApprover && application.status === 'pending') || (isApplicant && ['draft', 'rejected'].includes(application.status))}
-		<section class="panel action-panel">
+		<section class="panel mb-[18px] px-7 py-[26px] max-[620px]:px-[18px] max-[620px]:py-[21px]">
 			{#if isApprover}
-				<h2>处理申请</h2>
-				<textarea rows="3" placeholder="填写审批意见（可选）" bind:value={comment}></textarea>
+				<h2 class="m-0 text-[17px]">处理申请</h2>
+				<textarea
+					class="form-control form-textarea mt-4"
+					rows="3"
+					placeholder="填写审批意见（可选）"
+					bind:value={comment}></textarea>
 			{:else}
-				<h2>{application.status === 'rejected' ? '修改申请' : '提交申请'}</h2>
-				<p class="submit-hint">
+				<h2 class="m-0 text-[17px]">{application.status === 'rejected' ? '修改申请' : '提交申请'}</h2>
+				<p class="mt-2 mb-0 text-[13px] text-[#8a95a8]">
 					{application.status === 'rejected'
 						? '申请已驳回，请修改后重新提交审批。'
 						: '草稿已保存，确认无误后即可提交审批。'}
 				</p>
 			{/if}
-			<div class="actions">
+			<div class="mt-3.5 flex justify-end gap-2.5 max-[620px]:flex-col-reverse max-[620px]:[&>*]:w-full">
 				{#if isApplicant && ['draft', 'rejected'].includes(application.status)}
 					<a class="primary-button" href={`/apply?id=${application.id}`}
 						>{application.status === 'rejected' ? '编辑并重新提交' : '编辑并提交审批'}</a
@@ -137,195 +167,7 @@
 						onclick={() => changeStatus('rejected')}>驳回</button
 					><button class="primary-button" disabled={acting} onclick={() => changeStatus('approved')}>通过</button>{/if}
 			</div>
-			{#if actionMessage}<p class="action-message">{actionMessage}</p>{/if}
+			{#if actionMessage}<p class="mt-3 mb-0 text-[13px] text-[#237a52]">{actionMessage}</p>{/if}
 		</section>
 	{/if}
 {/if}
-
-<style>
-	.secondary-button {
-		display: inline-flex;
-		align-items: center;
-		min-height: 42px;
-		padding: 0 16px;
-		border: 1px solid #d9e0eb;
-		border-radius: 9px;
-		background: white;
-		color: #526078;
-		font-weight: 650;
-	}
-	.detail-panel,
-	.action-panel {
-		margin-bottom: 18px;
-		padding: 26px 28px;
-	}
-	.detail-header {
-		display: flex;
-		justify-content: space-between;
-		gap: 20px;
-		padding-bottom: 22px;
-		border-bottom: 1px solid #edf0f5;
-	}
-	.detail-header h2 {
-		margin: 12px 0 6px;
-		font-size: 22px;
-	}
-	.detail-header p {
-		margin: 0;
-		color: #8a95a8;
-		font-size: 13px;
-	}
-	.cost {
-		color: #3975f6;
-		font-size: 24px;
-		font-weight: 750;
-		text-align: right;
-	}
-	.cost small {
-		display: block;
-		margin-top: 4px;
-		color: #9aa4b5;
-		font-size: 11px;
-		font-weight: 400;
-	}
-	.info-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 20px;
-		padding-top: 22px;
-	}
-	.info-grid div {
-		display: grid;
-		gap: 7px;
-	}
-	.info-grid span,
-	.section-title span {
-		color: #8a95a8;
-		font-size: 12px;
-	}
-	.info-grid strong {
-		color: #34415a;
-		font-size: 14px;
-		line-height: 1.6;
-	}
-	.wide {
-		grid-column: 1 / -1;
-	}
-	.section-title {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-	.section-title h2,
-	.action-panel h2 {
-		margin: 0;
-		font-size: 17px;
-	}
-	.muted {
-		color: #8a95a8;
-		font-size: 13px;
-	}
-	.timeline {
-		display: grid;
-		gap: 18px;
-		margin-top: 20px;
-	}
-	.record {
-		display: flex;
-		gap: 12px;
-		align-items: flex-start;
-	}
-	.dot {
-		width: 9px;
-		height: 9px;
-		margin-top: 5px;
-		border-radius: 50%;
-		background: #3975f6;
-	}
-	.record strong,
-	.record small {
-		display: block;
-	}
-	.record strong {
-		color: #34415a;
-		font-size: 13px;
-	}
-	.record small {
-		margin-top: 5px;
-		color: #8a95a8;
-		font-size: 12px;
-	}
-	.action-panel textarea {
-		width: 100%;
-		margin-top: 16px;
-		padding: 11px 12px;
-		border: 1px solid #dfe5ee;
-		border-radius: 8px;
-		resize: vertical;
-		outline: none;
-	}
-	.actions {
-		display: flex;
-		justify-content: flex-end;
-		gap: 10px;
-		margin-top: 14px;
-	}
-	.danger-button {
-		min-height: 42px;
-		padding: 0 18px;
-		border: 1px solid #f0c6cc;
-		border-radius: 9px;
-		background: #fff6f7;
-		color: #b54855;
-		font-weight: 650;
-	}
-	button:disabled {
-		opacity: 0.6;
-		cursor: wait;
-	}
-	.action-message {
-		margin: 12px 0 0;
-		color: #237a52;
-		font-size: 13px;
-	}
-	.submit-hint {
-		margin: 8px 0 0;
-		color: #8a95a8;
-		font-size: 13px;
-	}
-	.empty {
-		min-height: 240px;
-		display: grid;
-		place-content: center;
-		justify-items: center;
-		gap: 16px;
-		color: #8a95a8;
-	}
-	.empty strong {
-		color: #44516a;
-	}
-	@media (max-width: 620px) {
-		.detail-header {
-			flex-direction: column;
-		}
-		.cost {
-			text-align: left;
-		}
-		.info-grid {
-			grid-template-columns: 1fr;
-		}
-		.wide {
-			grid-column: auto;
-		}
-		.detail-panel,
-		.action-panel {
-			padding: 21px 18px;
-		}
-		.actions {
-			flex-direction: column-reverse;
-		}
-		.actions button {
-			width: 100%;
-		}
-	}
-</style>

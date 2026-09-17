@@ -63,11 +63,4 @@
 	});
 </script>
 
-<div bind:this={container} class="echart" style:height role="img" aria-label={ariaLabel}></div>
-
-<style>
-	.echart {
-		width: 100%;
-		min-height: 180px;
-	}
-</style>
+<div bind:this={container} class="min-h-[180px] w-full" style:height role="img" aria-label={ariaLabel}></div>

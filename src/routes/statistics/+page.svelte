@@ -77,17 +77,25 @@
 		<h1>数据统计</h1>
 		<p>从申请量、审批状态和金额趋势了解各部门申请情况。</p>
 	</div>
-	<select class="range-select" aria-label="统计时间范围" bind:value={selectedRange}
+	<select
+		class="h-10 min-w-32 rounded-lg border border-[#dfe5ee] bg-white px-3 text-[#44516a] outline-none focus:border-[#3975f6] focus:shadow-[0_0_0_3px_#3975f61c]"
+		aria-label="统计时间范围"
+		bind:value={selectedRange}
 		><option value="year">最近一年</option><option value="halfYear">最近半年</option><option value="quarter"
 			>最近三月</option
 		><option value="currentYear">今年</option></select
 	>
 </div>
-{#if loading}<section class="panel loading">正在加载统计数据…</section>
-{:else if !isApprover}<section class="panel denied">
-		<strong>数据统计仅对审批人开放</strong><span>请切换到李经理账号查看申请统计。</span>
+{#if loading}<section class="panel grid min-h-[220px] place-content-center justify-items-center gap-2 text-[#8a95a8]">
+		正在加载统计数据…
 	</section>
-{:else}<section class="metric-grid">
+{:else if !isApprover}<section
+		class="panel grid min-h-[220px] place-content-center justify-items-center gap-2 text-[#8a95a8]"
+	>
+		<strong class="text-base text-[#44516a]">数据统计仅对审批人开放</strong><span>请切换到李经理账号查看申请统计。</span
+		>
+	</section>
+{:else}<section class="mb-[18px] grid grid-cols-4 gap-3.5 max-[900px]:grid-cols-2 max-[430px]:grid-cols-1">
 		<MetricCard label="已提交申请" value={totalSubmitted} hint="不含草稿" />
 		<MetricCard
 			label={`${currentMonth.slice(0, 4)}年${currentMonth.slice(5)}月申请`}
@@ -97,21 +105,37 @@
 		<MetricCard label="审批通过率" value={`${approvalRate}%`} hint="仅统计已完成审批" />
 		<MetricCard label="金额合计" value={`¥ ${totalCost.toLocaleString()}`} hint="仅统计有金额字段的申请" />
 	</section>
-	<section class="panel insight">
-		<h2>费用概览</h2>
-		<div>
-			<span>平均申请金额</span><strong>¥ {averageAmount.toFixed(2)}</strong>
+	<section
+		class="panel mb-[18px] grid grid-cols-[1.2fr_repeat(3,1fr)] items-center gap-[18px] px-6 py-[22px] max-[700px]:grid-cols-2 max-[430px]:grid-cols-1"
+	>
+		<h2 class="m-0 text-[17px] max-[700px]:col-span-full max-[430px]:col-auto">费用概览</h2>
+		<div
+			class="border-l border-[#edf0f5] pl-[18px] max-[430px]:border-t max-[430px]:border-l-0 max-[430px]:pt-2.5 max-[430px]:pl-0"
+		>
+			<span class="block text-xs text-[#8a95a8]">平均申请金额</span><strong
+				class="mt-2 block text-[19px] text-[#34415a]">¥ {averageAmount.toFixed(2)}</strong
+			>
 		</div>
-		<div>
-			<span>最高单笔费用</span><strong>¥ {maxAmount.toFixed(2)}</strong>
+		<div
+			class="border-l border-[#edf0f5] pl-[18px] max-[430px]:border-t max-[430px]:border-l-0 max-[430px]:pt-2.5 max-[430px]:pl-0"
+		>
+			<span class="block text-xs text-[#8a95a8]">最高单笔费用</span><strong
+				class="mt-2 block text-[19px] text-[#34415a]">¥ {maxAmount.toFixed(2)}</strong
+			>
 		</div>
-		<div><span>完成审批量</span><strong>{completedCount}</strong></div>
+		<div
+			class="border-l border-[#edf0f5] pl-[18px] max-[430px]:border-t max-[430px]:border-l-0 max-[430px]:pt-2.5 max-[430px]:pl-0"
+		>
+			<span class="block text-xs text-[#8a95a8]">完成审批量</span><strong class="mt-2 block text-[19px] text-[#34415a]"
+				>{completedCount}</strong
+			>
+		</div>
 	</section>
-	<section class="panel trend-card">
-		<div class="card-heading">
+	<section class="panel mb-[18px] p-6">
+		<div class="flex items-start justify-between gap-4">
 			<div>
-				<h2>部门月度申请趋势</h2>
-				<p>
+				<h2 class="m-0 text-[17px]">部门月度申请趋势</h2>
+				<p class="mt-[7px] mb-0 text-xs text-[#9aa4b5]">
 					按业务日期所在月份统计，{selectedRange === 'currentYear'
 						? '今年'
 						: selectedRange === 'halfYear'
@@ -121,170 +145,41 @@
 								: '最近 12 个月'}
 				</p>
 			</div>
-			<span>堆叠申请单量 · 不含草稿</span>
+			<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">堆叠申请单量 · 不含草稿</span>
 		</div>
 		{#key selectedRange}<EChart option={trendOption} height="350px" ariaLabel="部门月度申请趋势堆叠柱状图" />{/key}
 	</section>
-	<section class="panel cost-card">
-		<div class="card-heading">
+	<section class="panel mb-[18px] px-6 pt-6 pb-[18px]">
+		<div class="flex items-start justify-between gap-4">
 			<div>
-				<h2>月度预计费用</h2>
-				<p>按业务日期月份汇总所选范围内有金额字段的申请</p>
+				<h2 class="m-0 text-[17px]">月度预计费用</h2>
+				<p class="mt-[7px] mb-0 text-xs text-[#9aa4b5]">按业务日期月份汇总所选范围内有金额字段的申请</p>
 			</div>
-			<span>人民币</span>
+			<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">人民币</span>
 		</div>
 		{#key selectedRange}<EChart option={costOption} height="260px" ariaLabel="月度预计费用柱状图" />{/key}
 	</section>
-	<section class="stats-grid">
-		<div class="panel chart-card">
-			<div class="card-heading">
-				<h2>申请状态分布</h2>
-				<span>所选范围 · 已提交申请</span>
+	<section class="mb-[18px] grid grid-cols-2 gap-[18px] max-[700px]:grid-cols-1">
+		<div class="panel min-h-[340px] p-6">
+			<div class="flex items-start justify-between gap-4">
+				<h2 class="m-0 text-[17px]">申请状态分布</h2>
+				<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">所选范围 · 已提交申请</span>
 			</div>
 			{#key selectedRange}<EChart option={statusOption} height="280px" ariaLabel="申请状态分布环形图" />{/key}
 		</div>
-		<div class="panel chart-card">
-			<div class="card-heading">
-				<h2>申请类型分布</h2>
-				<span>所选范围 · 已提交申请</span>
+		<div class="panel min-h-[340px] p-6">
+			<div class="flex items-start justify-between gap-4">
+				<h2 class="m-0 text-[17px]">申请类型分布</h2>
+				<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">所选范围 · 已提交申请</span>
 			</div>
 			{#key selectedRange}<EChart option={typeOption} height="280px" ariaLabel="申请类型分布环形图" />{/key}
 		</div>
-		<div class="panel chart-card">
-			<div class="card-heading">
-				<h2>部门申请单量</h2>
-				<span>所选范围 · 已提交申请</span>
+		<div class="panel min-h-[340px] p-6">
+			<div class="flex items-start justify-between gap-4">
+				<h2 class="m-0 text-[17px]">部门申请单量</h2>
+				<span class="text-[11px] whitespace-nowrap text-[#9aa4b5]">所选范围 · 已提交申请</span>
 			</div>
 			{#key selectedRange}<EChart option={departmentOption} height="280px" ariaLabel="部门申请单量柱状图" />{/key}
 		</div>
 	</section>
 {/if}
-
-<style>
-	.metric-grid {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 14px;
-		margin-bottom: 18px;
-	}
-	.range-select {
-		min-width: 128px;
-		height: 40px;
-		padding: 0 12px;
-		border: 1px solid #dfe5ee;
-		border-radius: 8px;
-		background: #fff;
-		color: #44516a;
-		outline: none;
-	}
-	.range-select:focus {
-		border-color: #3975f6;
-		box-shadow: 0 0 0 3px #3975f61c;
-	}
-	.trend-card,
-	.cost-card {
-		margin-bottom: 18px;
-		padding: 24px;
-	}
-	.cost-card {
-		padding-bottom: 18px;
-	}
-	.stats-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 18px;
-		margin-bottom: 18px;
-	}
-	.chart-card {
-		min-height: 340px;
-		padding: 24px;
-	}
-	.card-heading {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		gap: 16px;
-	}
-	.card-heading h2,
-	.insight h2 {
-		margin: 0;
-		font-size: 17px;
-	}
-	.card-heading p {
-		margin: 7px 0 0;
-		color: #9aa4b5;
-		font-size: 12px;
-	}
-	.card-heading > span {
-		color: #9aa4b5;
-		font-size: 11px;
-		white-space: nowrap;
-	}
-	.insight {
-		display: grid;
-		grid-template-columns: 1.2fr repeat(3, 1fr);
-		gap: 18px;
-		align-items: center;
-		margin-bottom: 18px;
-		padding: 22px 24px;
-	}
-	.insight > div {
-		padding-left: 18px;
-		border-left: 1px solid #edf0f5;
-	}
-	.insight span,
-	.insight strong {
-		display: block;
-	}
-	.insight span {
-		color: #8a95a8;
-		font-size: 12px;
-	}
-	.insight strong {
-		margin-top: 8px;
-		color: #34415a;
-		font-size: 19px;
-	}
-	.loading,
-	.denied {
-		min-height: 220px;
-		display: grid;
-		place-content: center;
-		justify-items: center;
-		gap: 8px;
-		color: #8a95a8;
-	}
-	.denied strong {
-		color: #44516a;
-		font-size: 16px;
-	}
-	@media (max-width: 900px) {
-		.metric-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-	@media (max-width: 700px) {
-		.stats-grid {
-			grid-template-columns: 1fr;
-		}
-		.insight {
-			grid-template-columns: 1fr 1fr;
-		}
-		.insight h2 {
-			grid-column: 1 / -1;
-		}
-	}
-	@media (max-width: 430px) {
-		.metric-grid {
-			grid-template-columns: 1fr;
-		}
-		.insight {
-			grid-template-columns: 1fr;
-		}
-		.insight > div {
-			padding: 10px 0 0;
-			border-left: 0;
-			border-top: 1px solid #edf0f5;
-		}
-	}
-</style>

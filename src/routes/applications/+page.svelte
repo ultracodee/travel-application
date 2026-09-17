@@ -93,68 +93,111 @@
 	{#if !isApprover}<a class="primary-button" href="/apply">＋ 新建申请</a>{/if}
 </div>
 
-<section class="panel list-panel">
-	<div class="toolbar">
-		<div class="search-wrap">
-			<span>⌕</span><input
+<section class="panel px-6 py-5 max-[620px]:p-4">
+	<div class="mb-[18px] flex justify-end gap-3.5 max-[620px]:flex-col">
+		<div class="relative max-w-[360px] flex-1 max-[620px]:max-w-none">
+			<span class="absolute top-0 left-3 text-[27px] text-[#8995a8]">⌕</span><input
+				class="h-10 w-full rounded-lg border border-[#dfe5ee] bg-white pr-3 pl-9 text-[#33405a] outline-none focus:border-[#3975f6] focus:shadow-[0_0_0_3px_#3975f61c]"
 				aria-label="搜索申请"
 				placeholder="搜索编号、申请人或目的地"
 				bind:value={keyword}
 				onkeydown={(event) => event.key === 'Enter' && applyFilters()}
 			/>
 		</div>
-		<select aria-label="按状态筛选" bind:value={status} onchange={applyFilters}>
+		<select
+			class="h-10 min-w-[130px] rounded-lg border border-[#dfe5ee] bg-white px-2.5 text-[#33405a] outline-none focus:border-[#3975f6] focus:shadow-[0_0_0_3px_#3975f61c] max-[620px]:w-full"
+			aria-label="按状态筛选"
+			bind:value={status}
+			onchange={applyFilters}
+		>
 			<option value="all">全部状态</option>
 			{#each Object.entries(APPLICATION_STATUS_LABEL).filter(([key]) => !isApprover || key !== 'draft') as [key, label] (key)}<option
 					value={key}>{label}</option
 				>{/each}
 		</select>
-		<select aria-label="按类型筛选" bind:value={type} onchange={applyFilters}>
+		<select
+			class="h-10 min-w-[130px] rounded-lg border border-[#dfe5ee] bg-white px-2.5 text-[#33405a] outline-none focus:border-[#3975f6] focus:shadow-[0_0_0_3px_#3975f61c] max-[620px]:w-full"
+			aria-label="按类型筛选"
+			bind:value={type}
+			onchange={applyFilters}
+		>
 			<option value="all">全部类型</option>
 			{#each Object.entries(APPLICATION_TYPE_LABEL) as [key, label] (key)}<option value={key}>{label}</option>{/each}
 		</select>
-		<button class="filter-button" type="button" onclick={applyFilters}>搜索</button>
+		<button
+			class="h-10 cursor-pointer rounded-lg bg-[#3975f6] px-4 font-semibold text-white"
+			type="button"
+			onclick={applyFilters}>搜索</button
+		>
 	</div>
 	{#if loading}
-		<div class="empty">正在加载申请记录…</div>
+		<div class="grid min-h-[280px] place-content-center justify-items-center gap-2 text-[13px] text-[#8a95a8]">
+			正在加载申请记录…
+		</div>
 	{:else if applications.length === 0}
-		<div class="empty">
-			<div class="empty-icon">▤</div>
-			<strong>暂无匹配申请</strong><span>可以新建一条申请。</span>
+		<div class="grid min-h-[280px] place-content-center justify-items-center gap-2 text-[13px] text-[#8a95a8]">
+			<div class="text-[30px] text-[#3975f6]">▤</div>
+			<strong class="text-base text-[#44516a]">暂无匹配申请</strong><span>可以新建一条申请。</span>
 		</div>
 	{:else}
-		<div class="table-wrap">
-			<table>
+		<div class="overflow-x-auto">
+			<table class="w-full min-w-[920px] border-collapse">
 				<thead
 					><tr
-						><th>申请编号</th><th>申请类型</th><th>申请人</th><th>申请摘要</th><th>业务日期</th><th>预计金额</th><th
-							>状态</th
-						><th>操作</th></tr
+						><th class="bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]">申请编号</th><th
+							class="bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]">申请类型</th
+						><th class="bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]">申请人</th><th
+							class="w-[180px] max-w-[180px] bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]"
+							>申请摘要</th
+						><th class="bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]">业务日期</th><th
+							class="bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]">预计金额</th
+						><th class="bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]">状态</th><th
+							class="bg-[#f8f9fc] px-2.5 py-3 text-left text-xs font-semibold text-[#8a95a8]">操作</th
+						></tr
 					></thead
 				>
 				<tbody>
 					{#each applications as item (item.id)}
 						<tr>
-							<td><a class="id-link" href={`/applications/${item.id}`}>{item.id}</a></td>
-							<td><strong>{getApplicationTypeLabel(item)}</strong><small>{item.title}</small></td>
-							<td><strong>{item.applicant.name}</strong><small>{item.applicant.department}</small></td>
-							<td>{getApplicationSummary(item)}</td>
-							<td>{getApplicationBusinessDate(item)}</td>
+							<td class="border-b border-[#edf0f5] px-2.5 py-4 text-[13px] whitespace-nowrap text-[#46536b]"
+								><a class="font-semibold text-[#3975f6]" href={`/applications/${item.id}`}>{item.id}</a></td
+							>
+							<td class="border-b border-[#edf0f5] px-2.5 py-4 text-[13px] whitespace-nowrap text-[#46536b]"
+								><strong class="block">{getApplicationTypeLabel(item)}</strong><small
+									class="mt-1 block text-[11px] text-[#9aa4b5]">{item.title}</small
+								></td
+							>
+							<td class="border-b border-[#edf0f5] px-2.5 py-4 text-[13px] whitespace-nowrap text-[#46536b]"
+								><strong class="block">{item.applicant.name}</strong><small
+									class="mt-1 block text-[11px] text-[#9aa4b5]">{item.applicant.department}</small
+								></td
+							>
 							<td
+								class="w-[180px] max-w-[180px] overflow-hidden border-b border-[#edf0f5] px-2.5 py-4 text-[13px] text-ellipsis whitespace-nowrap text-[#46536b]"
+								>{getApplicationSummary(item)}</td
+							>
+							<td class="border-b border-[#edf0f5] px-2.5 py-4 text-[13px] whitespace-nowrap text-[#46536b]"
+								>{getApplicationBusinessDate(item)}</td
+							>
+							<td class="border-b border-[#edf0f5] px-2.5 py-4 text-[13px] whitespace-nowrap text-[#46536b]"
 								>{#if getApplicationAmount(item) !== undefined}¥ {getApplicationAmount(item)?.toFixed(2)}{:else}<span
-										class="muted">—</span
+										class="text-[11px] text-[#9aa4b5]">—</span
 									>{/if}</td
 							>
-							<td><StatusBadge status={item.status} /></td>
-							<td>
-								<div class="row-actions">
+							<td class="border-b border-[#edf0f5] px-2.5 py-4 text-[13px] whitespace-nowrap text-[#46536b]"
+								><StatusBadge status={item.status} /></td
+							>
+							<td class="border-b border-[#edf0f5] px-2.5 py-4 text-[13px] whitespace-nowrap text-[#46536b]">
+								<div class="flex min-h-[18px] items-center gap-3">
 									{#if !isApprover && item.status === 'draft'}
-										<a class="detail-link" href={`/apply?id=${item.id}`}>编辑</a>
-										<button class="delete-button" disabled={deletingId === item.id} onclick={() => deleteDraft(item.id)}
-											>删除</button
+										<a class="text-xs font-semibold text-[#3975f6]" href={`/apply?id=${item.id}`}>编辑</a>
+										<button
+											class="cursor-pointer border-0 bg-transparent p-0 text-xs font-semibold text-[#d45c68] disabled:cursor-wait disabled:opacity-55"
+											disabled={deletingId === item.id}
+											onclick={() => deleteDraft(item.id)}>删除</button
 										>
 									{:else}
-										<a class="detail-link" href={`/applications/${item.id}`}>查看详情</a>
+										<a class="text-xs font-semibold text-[#3975f6]" href={`/applications/${item.id}`}>查看详情</a>
 									{/if}
 								</div>
 							</td>
@@ -166,160 +209,3 @@
 		<Pagination {page} {pageSize} {total} {totalPages} onPageChange={changePage} />
 	{/if}
 </section>
-
-<style>
-	.list-panel {
-		padding: 20px 24px;
-	}
-	.toolbar {
-		display: flex;
-		justify-content: flex-end;
-		gap: 14px;
-		margin-bottom: 18px;
-	}
-	.search-wrap {
-		position: relative;
-		flex: 1;
-		max-width: 360px;
-	}
-	.search-wrap span {
-		position: absolute;
-		left: 12px;
-		top: 0;
-		color: #8995a8;
-		font-size: 27px;
-	}
-	input,
-	select {
-		height: 40px;
-		border: 1px solid #dfe5ee;
-		border-radius: 8px;
-		background: white;
-		color: #33405a;
-		outline: none;
-	}
-	.search-wrap input {
-		width: 100%;
-		padding: 0 12px 0 36px;
-	}
-	select {
-		min-width: 130px;
-		padding: 0 10px;
-	}
-	.filter-button {
-		height: 40px;
-		padding: 0 16px;
-		border: 0;
-		border-radius: 8px;
-		background: #3975f6;
-		color: white;
-		font-weight: 650;
-		cursor: pointer;
-	}
-	input:focus,
-	select:focus {
-		border-color: #3975f6;
-		box-shadow: 0 0 0 3px #3975f61c;
-	}
-	.table-wrap {
-		overflow-x: auto;
-	}
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		min-width: 920px;
-	}
-	th {
-		padding: 12px 10px;
-		color: #8a95a8;
-		background: #f8f9fc;
-		font-size: 12px;
-		font-weight: 650;
-		text-align: left;
-	}
-	td {
-		padding: 16px 10px;
-		border-bottom: 1px solid #edf0f5;
-		color: #46536b;
-		font-size: 13px;
-		white-space: nowrap;
-	}
-	td strong,
-	td small {
-		display: block;
-	}
-	td small {
-		margin-top: 4px;
-		color: #9aa4b5;
-		font-size: 11px;
-	}
-	th:nth-child(4),
-	td:nth-child(4) {
-		width: 180px;
-		max-width: 180px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.id-link,
-	.detail-link {
-		color: #3975f6;
-		font-weight: 650;
-	}
-	.detail-link {
-		font-size: 12px;
-	}
-	.row-actions {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		min-height: 18px;
-	}
-	.delete-button {
-		padding: 0;
-		border: 0;
-		background: transparent;
-		color: #d45c68;
-		font-size: 12px;
-		font-weight: 650;
-		cursor: pointer;
-	}
-	.delete-button:disabled {
-		opacity: 0.55;
-		cursor: wait;
-	}
-	.muted {
-		color: #9aa4b5;
-		font-size: 11px;
-	}
-	.empty {
-		min-height: 280px;
-		display: grid;
-		place-content: center;
-		justify-items: center;
-		gap: 8px;
-		color: #8a95a8;
-		font-size: 13px;
-	}
-	.empty strong {
-		color: #44516a;
-		font-size: 16px;
-	}
-	.empty-icon {
-		color: #3975f6;
-		font-size: 30px;
-	}
-	@media (max-width: 620px) {
-		.toolbar {
-			flex-direction: column;
-		}
-		.search-wrap {
-			max-width: none;
-		}
-		select {
-			width: 100%;
-		}
-		.list-panel {
-			padding: 16px;
-		}
-	}
-</style>
